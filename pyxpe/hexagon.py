@@ -1,37 +1,89 @@
+#!/usr/bin/env python
+# Copyright (C) 2007--2016 the X-ray Polarimetry Explorer (XPE) team.
+#
+# For the license terms see the file LICENSE, distributed along with this
+# software.
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+
 # lib for Hex grid coordinate systems
 # from http://www.redblobgames.com/grids/hexagons/#pixel-to-hex
 
 from math import sqrt
 
+
 class Cube:
-    def __init__(self, x,y,z):
-        # Cube coordinate object, 3 coord.
+
+    """Class representing cubic coordinates, see
+    http://www.redblobgames.com/grids/hexagons/#coordinates
+    """
+    
+    def __init__(self, x, y, z):
+        """Constructor.
+        """
         self.x = x
         self.y = y
         self.z = z
 
     def __str__(self):
-        return "Cube(%d, %d, %d)" % (self.x, self.y, self.z)
+        """String formatting.
+        """
+        return 'Cube(%d, %d, %d)' % (self.x, self.y, self.z)
 
+
+    
 class Hex:
+
+    """Class representing axial coordinates, see
+    http://www.redblobgames.com/grids/hexagons/#coordinates
+    """
+    
     def __init__(self, q, r):
-        # Axial coordinate object, 2 coord.
+        """Constructor.
+        """
         self.q = q
         self.r = r
 
     def __str__(self):
-        return "Hex(%d, %d)" % (self.q, self.r)
-        
+        """String formatting.
+        """
+        return 'Hex(%d, %d)' % (self.q, self.r)
+
+
+    
 class Offset:
+
+    """Class representing offset coordinates, see
+    http://www.redblobgames.com/grids/hexagons/#coordinates
+    """
+    
     def __init__(self, col, row):
-        # Axial coordinate object, 2 coord.
+        """Constructor.
+        """
         self.row = row
         self.col = col
 
     def __str__(self):
-        return "Offset(%d, %d)" % (self.col, self.row)
+        """String formatting.
+        """
+        return 'Offset(%d, %d)' % (self.col, self.row)
 
-    def getNeighbors(self):
+    def neighbors(self):
+        """
+        """
         print "not implemented yet"
         return None
         
