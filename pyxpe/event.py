@@ -28,7 +28,7 @@ import numpy
 import matplotlib
 import matplotlib.pyplot as plt
 
-import pyxpedaq.xpol as xpol
+import pyxpe.xpol as xpol
 
 
 
