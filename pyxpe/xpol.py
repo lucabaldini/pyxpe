@@ -27,27 +27,43 @@ from matplotlib import collections, transforms
 
 class pHexagonalMatrix():
 
-    """
+    """Class describing an hexagonally-arranged sampling matrix.
     """
 
     COLUMN_PITCH = 0.0500
     ROW_PITCH = 0.0433
 
     def __init__(self, num_columns, num_rows, start_column=0, start_row=0):
-        """
+        """Constructor.
         """
         self.num_columns = num_columns
         self.num_rows = num_rows
         self.start_column = start_column
         self.start_row = start_row
+        self.__grid = None
+
+    def __computeGrid(self, mode='asic'):
+        """Precompute a grid of pixel offsets (in physical coordinates) for the
+        matrix.
+        """
+        if mode == 'asic':
+            _f = self.pixel2world_asic
+        elif mode == 'recon':
+            _f = self.pixel2world_recon
         self.__grid = []
-        for col in xrange(start_column, start_column + num_columns):
-            for row in xrange(start_row, start_row + num_rows):
-                self.__grid.append(self.pixel2world(col, row))
+        for col in xrange(self.start_column, self.start_column + \
+                          self.num_columns):
+            for row in xrange(self.start_row, self.start_row + self.num_rows):
+                self.__grid.append(_f(col, row))
 
     def grid(self):
+        """Return the underlying grid.
+
+        This is calculating and caching the grid, if the operation hasn't been
+        done already.
         """
-        """
+        if self.__grid is None:
+            self.__computeGrid()
         return self.__grid
 
     def pixel2world(self, col, row):
@@ -126,15 +142,6 @@ class pHexagonalMatrix():
                 chan += 1
         f.close()
 
-    def world2pixel_asic(self, x, y):
-        """
-        """
-        row = int(-y/self.ROW_PITCH + 0.5)
-        dx = x % self.COLUMN_PITCH
-        row += int(abs(dx - 0.5*self.COLUMN_PITCH)/(0.5*self.COLUMN_PITCH))
-        col = int(x/self.COLUMN_PITCH + 0.5) - (row % 2)
-        return col, row
-
     def frame(self, padding=0.1):
         """Return a (xmin, ymin, xmax, ymax) containing the entire matrix.
         """
@@ -172,7 +179,7 @@ class pHexagonalMatrix():
         dim = (dim/scale*0.8*self.COLUMN_PITCH)**2
         # Create the hexagin collection.
         poly = collections.RegularPolyCollection(6,
-                                                 offsets=self.__grid,
+                                                 offsets=self.grid(),
                                                  sizes=(dim,),
                                                  transOffset=ax.transData,
                                                  facecolors=colors,
@@ -209,15 +216,27 @@ class pHexagonalMatrix():
 
 
 
+
+class pXpolMatrix(pHexagonalMatrix):
+
+    """
+    """
+
+    def __init__(self):
+        """Constructor.
+        """
+        pHexagonalMatrix.__init__(self, 300, 352, 0, 0)
+
+    def draw(self):
+        """Overloaded draw method.
+        """
+        pass
+
+
+
 if __name__ == '__main__':
-    matrix = pHexagonalMatrix(10, 12, 0, 0)
-    #matrix.write_pixmap('pixmap.dat')
-    import random
-    x, y = random.uniform(0, 0.45), random.uniform(-0.45, 0)
-    col, row = matrix.world2pixel_asic(x, y)
-    print col, row
+    matrix = pHexagonalMatrix(30, 36, 0, 0)
     matrix.draw(show=False)
-    plt.plot([x], [y], 'o')
     plt.show()
 
     
