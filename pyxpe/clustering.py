@@ -101,7 +101,15 @@ class pCluster:
     def __do_moments_analysis(self):
         """Do the first-step moments analysis.
         """
-        pass
+        dx = (self.x - self.baricenter.x())
+        dy = (self.y - self.baricenter.y())
+        num = 2*numpy.sum(dx*dy*self.adc_values)
+        den = numpy.sum((dy**2. - dx**2.)*self.adc_values)
+        self.phi0 = -0.5*numpy.arctan(num/den)
+        dxp = numpy.cos(self.phi0)*dx + numpy.sin(self.phi0)*dy
+        dyp = -numpy.sin(self.phi0)*dx + numpy.cos(self.phi0)*dy
+        self.mom2_long = numpy.sum(dxp**2*self.adc_values)/self.pulse_height
+        self.mom2_trans = numpy.sum(dyp**2*self.adc_values)/self.pulse_height
 
 
     
@@ -126,7 +134,8 @@ def test(filePath, num_events):
         event = input_file.next()
         print event
         cluster = single_clustering(event, 9)
-        print cluster.size(), cluster.pulse_height, cluster.baricenter
+        print cluster.size(), cluster.pulse_height, cluster.baricenter,\
+            cluster.phi0, cluster.mom2_long, cluster.mom2_trans
         event.draw()
 
 
