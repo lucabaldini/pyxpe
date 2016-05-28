@@ -25,6 +25,10 @@ import matplotlib.pyplot as plt
 from matplotlib import collections, transforms
 
 
+XPOL_NUM_COLUMNS = 300
+XPOL_NUM_ROWS = 352
+
+
 class pHexagonalMatrix():
 
     """Class describing an hexagonally-arranged sampling matrix.
@@ -42,7 +46,7 @@ class pHexagonalMatrix():
         self.start_row = start_row
         self.__grid = None
 
-    def __computeGrid(self, mode='asic'):
+    def __compute_grid(self, mode='asic'):
         """Precompute a grid of pixel offsets (in physical coordinates) for the
         matrix.
         """
@@ -63,7 +67,7 @@ class pHexagonalMatrix():
         done already.
         """
         if self.__grid is None:
-            self.__computeGrid()
+            self.__compute_grid()
         return self.__grid
 
     def pixel2world(self, col, row):
@@ -88,22 +92,22 @@ class pHexagonalMatrix():
 
         This is using the reconstruction coordinate system.
         """
-        x = (row - 0.5*(self.num_rows - 1))*self.ROW_PITCH
-        y = (col - 0.5*(self.num_columns - 0.5 + row % 2))*self.COLUMN_PITCH
+        x = (row - 0.5*(XPOL_NUM_ROWS - 1))*self.ROW_PITCH
+        y = (col - 0.5*(XPOL_NUM_COLUMNS - 0.5 + row % 2))*self.COLUMN_PITCH
         return (x, y)
 
     def asic2recon(self, x, y):
         """Convert from ASIC coordinates to recon coordinates.
         """
-        _x = -(y + 0.5*(self.num_rows - 1)*self.ROW_PITCH)
-        _y = x - 0.5*(self.num_columns - 0.5)*self.COLUMN_PITCH
+        _x = -(y + 0.5*(XPOL_NUM_ROWS - 1)*self.ROW_PITCH)
+        _y = x - 0.5*(XPOL_NUM_COLUMNS - 0.5)*self.COLUMN_PITCH
         return (_x, _y)
 
     def recon2asic(self, x, y):
         """Convert from recon coordiates to ASIC coordinates.
         """
-        _x = y + 0.5*(self.num_columns - 0.5)*self.COLUMN_PITCH
-        _y = -(x + 0.5*(self.num_rows - 1)*self.ROW_PITCH)
+        _x = y + 0.5*(XPOL_NUM_COLUMNS - 0.5)*self.COLUMN_PITCH
+        _y = -(x + 0.5*(XPOL_NUM_ROWS - 1)*self.ROW_PITCH)
         return (_x, _y)
 
     def border(self, col, row):
@@ -225,12 +229,15 @@ class pXpolMatrix(pHexagonalMatrix):
     def __init__(self):
         """Constructor.
         """
-        pHexagonalMatrix.__init__(self, 300, 352, 0, 0)
+        pHexagonalMatrix.__init__(self, XPOL_NUM_COLUMNS, XPOL_NUM_ROWS, 0, 0)
 
     def draw(self):
         """Overloaded draw method.
         """
         pass
+
+
+XPOL_MATRIX = pXpolMatrix()
 
 
 

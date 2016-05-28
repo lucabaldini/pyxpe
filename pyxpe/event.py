@@ -144,10 +144,11 @@ class pXpeEventWindowed(pXpeEventBase):
         """
         return self.adc_counts[self.adc_counts >= zero_suppression].sum()
 
-    def baricenter(self, zero_suppression=10):
-        """Return the baricenter of the event.
+    def matrix(self):
         """
-        return None
+        """
+        return xpol.pHexagonalMatrix(self.num_columns(), self.num_rows(),
+                                     self.xmin, self.ymin)
 
     def ascii(self, zero_suppression=10, max_threshold=0.75, width=4,
               color=True):
@@ -313,6 +314,6 @@ if __name__ == '__main__':
     parser.add_argument('infile', type=str,
                         help='the input binary file')
     parser.add_argument('num_events', type=int,
-                        help = 'number of events to be processed')                    
+                        help = 'number of events to be processed')
     args = parser.parse_args()
     test_windowed(args.infile, args.num_events)
