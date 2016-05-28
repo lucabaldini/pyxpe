@@ -237,6 +237,10 @@ class pXpolMatrix(pHexagonalMatrix):
         pass
 
 
+
+"""I am sure we don't need this after all, when the conversion functions are
+factored out of the base class.
+"""
 XPOL_MATRIX = pXpolMatrix()
 
 

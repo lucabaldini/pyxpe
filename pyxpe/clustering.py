@@ -77,25 +77,31 @@ class pCluster:
         self.x = x
         self.y = y
         self.adc_values = adc_values
-        self.pulse_height = self.__pulse_height()
-        self.baricenter = self.__baricenter()
+        self.__compute_pulse_height()
+        self.__compute_baricenter()
+        self.__do_moments_analysis()
 
     def size(self):
         """Return the cluster size.
         """
         return len(self.adc_values)
 
-    def __pulse_height(self):
+    def __compute_pulse_height(self):
         """Calculate the pulse height of the cluster.
         """
-        return self.adc_values.sum()
+        self.pulse_height = self.adc_values.sum()
 
-    def __baricenter(self):
+    def __compute_baricenter(self):
         """Calculate the baricenter of the cluster.
         """
         _x = numpy.sum(self.x*self.adc_values)/self.pulse_height
         _y = numpy.sum(self.y*self.adc_values)/self.pulse_height
-        return p2dPoint(_x, _y)
+        self.baricenter = p2dPoint(_x, _y)
+
+    def __do_moments_analysis(self):
+        """Do the first-step moments analysis.
+        """
+        pass
 
 
     
