@@ -25,7 +25,7 @@ from pyxpe.event import pXpeBinaryFileWindowed
 from pyxpe.xpol import XPOL_MATRIX, XPOL_COLUMN_PITCH
 
 
-class p2dPoint(numpy.ndarray):
+class xpe2dPoint(numpy.ndarray):
 
     """Small numpy ndarray subclass representing a point in two dimensions.
     """
@@ -65,7 +65,7 @@ class p2dPoint(numpy.ndarray):
     
 
 
-class pCluster:
+class xpeCluster:
 
     """Class representing a cluster of pixels, i.e., a photoelectron track.
     """
@@ -101,7 +101,7 @@ class pCluster:
         """
         _x = numpy.sum(self.x*self.adc_values)/self.pulse_height
         _y = numpy.sum(self.y*self.adc_values)/self.pulse_height
-        self.baricenter = p2dPoint(_x, _y)
+        self.baricenter = xpe2dPoint(_x, _y)
 
     def __do_moments_analysis(self):
         """Do the first-step moments analysis.
@@ -129,11 +129,19 @@ def single_clustering(event, zero_suppression=9):
 
     This takes all the pixels above the zero-suppression threshold in the window
     and returns the corresponing cluster object.
+
+    Args
+    ----
+    event : pXpeEventBase instance
+        The underlying event object.
+
+    zero_suppression : float or array
+        The zero suppression threshold.
     """
     adc_values =  event.adc_counts[event.adc_counts >= zero_suppression]
     col, row = numpy.where(event.adc_counts >= zero_suppression)
     x, y = XPOL_MATRIX.pixel2world_recon(event.xmin + col, event.ymin + row)
-    return [pCluster(x, y, adc_values)]
+    return [xpeCluster(x, y, adc_values)]
 
 
 
@@ -143,7 +151,7 @@ def hierarchical_clustering(event, zero_suppression=9, method='single',
     """Lightweight wrapper over the scipy.cluster.hierarchy module.
 
     This is essentially calling scipy.cluster.hierarchy.linkage and
-    scipy.cluster.hierarchy.fcluster, returning a list of pCluster objects
+    scipy.cluster.hierarchy.fcluster, returning a list of xpeCluster objects
     sorted by pulse height.
 
     The default parameters in the method signature are those producing the
@@ -180,19 +188,19 @@ def hierarchical_clustering(event, zero_suppression=9, method='single',
 
     Return
     ------
-    a list of pCluster objects sorted by pulse height.
+    a list of xpeCluster objects sorted by pulse height.
     """
     import scipy.cluster.hierarchy
     adc_values =  event.adc_counts[event.adc_counts >= zero_suppression]
     col, row = numpy.where(event.adc_counts >= zero_suppression)
-    x, y = XPOL_MATRIX.pixel2world(event.xmin + col, event.ymin + row)
+    x, y = XPOL_MATRIX.pixel2world_recon(event.xmin + col, event.ymin + row)
     data = numpy.vstack((x, y),).transpose()
     Z = scipy.cluster.hierarchy.linkage(data, method, metric)
     clusters = scipy.cluster.hierarchy.fcluster(Z, max_distance, criterion)
     cluster_list = []
     for i in xrange(1, max(clusters) + 1):
         _mask = numpy.where(clusters == i)
-        cluster_list.append(pCluster(x[_mask], y[_mask], adc_values[_mask]))
+        cluster_list.append(xpeCluster(x[_mask], y[_mask], adc_values[_mask]))
     cluster_list.sort()
     return cluster_list
 
