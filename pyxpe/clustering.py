@@ -20,6 +20,9 @@
 
 
 import numpy
+import matplotlib.pyplot as plt
+
+from matplotlib import collections, transforms
 
 from pyxpe.event import pXpeBinaryFileWindowed
 from pyxpe.xpol import XPOL_MATRIX, XPOL_COLUMN_PITCH
@@ -58,6 +61,13 @@ class xpe2dPoint(numpy.ndarray):
         """
         return self[1]
 
+    def draw(self, show=True):
+        """
+        """
+        plt.plot(self.x(), self.y(), 'o')
+        if show:
+            plt.show()
+
     def __str__(self):
         """String formatting
         """
@@ -77,8 +87,12 @@ class xpeCluster:
         self.x = x
         self.y = y
         self.adc_values = adc_values
-        self.__compute_pulse_height()
-        self.__compute_baricenter()
+        # Calculate the pulse height.
+        self.pulse_height = self.adc_values.sum()
+        # Calculate the baricenter position.
+        _x = numpy.sum(self.x*self.adc_values)/self.pulse_height
+        _y = numpy.sum(self.y*self.adc_values)/self.pulse_height
+        self.baricenter = xpe2dPoint(_x, _y)
         self.__do_moments_analysis()
 
     def num_pixels(self):
@@ -90,18 +104,6 @@ class xpeCluster:
         """
         """
         return other.pulse_height - self.pulse_height
-
-    def __compute_pulse_height(self):
-        """Calculate the pulse height of the cluster.
-        """
-        self.pulse_height = self.adc_values.sum()
-
-    def __compute_baricenter(self):
-        """Calculate the baricenter of the cluster.
-        """
-        _x = numpy.sum(self.x*self.adc_values)/self.pulse_height
-        _y = numpy.sum(self.y*self.adc_values)/self.pulse_height
-        self.baricenter = xpe2dPoint(_x, _y)
 
     def __do_moments_analysis(self):
         """Do the first-step moments analysis.
@@ -115,11 +117,6 @@ class xpeCluster:
         dyp = -numpy.sin(self.phi0)*dx + numpy.cos(self.phi0)*dy
         self.mom2_long = numpy.sum(dxp**2*self.adc_values)/self.pulse_height
         self.mom2_trans = numpy.sum(dyp**2*self.adc_values)/self.pulse_height
-
-    def draw(self):
-        """Draw the cluster.
-        """
-        
 
     def __str__(self):
         """String formatting.
@@ -198,7 +195,7 @@ def hierarchical_clustering(event, zero_suppression=9, method='single',
     import scipy.cluster.hierarchy
     adc_values =  event.adc_counts[event.adc_counts >= zero_suppression]
     col, row = numpy.where(event.adc_counts >= zero_suppression)
-    x, y = XPOL_MATRIX.pixel2world_recon(event.xmin + col, event.ymin + row)
+    x, y = XPOL_MATRIX.pixel2world(event.xmin + col, event.ymin + row)
     data = numpy.vstack((x, y),).transpose()
     Z = scipy.cluster.hierarchy.linkage(data, method, metric)
     clusters = scipy.cluster.hierarchy.fcluster(Z, max_distance, criterion)
@@ -224,7 +221,8 @@ def test(filePath, num_events):
             print cluster
         cluster = cluster_list[0]
         print cluster.phi0, cluster.mom2_long, cluster.mom2_trans
-        event.draw()
+        event.draw(show=False)
+        cluster.baricenter.draw()
 
 
         

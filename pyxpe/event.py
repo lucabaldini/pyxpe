@@ -186,7 +186,7 @@ class pXpeEventWindowed(pXpeEventBase):
         """
         print(self.ascii(zero_suppression))
 
-    def draw(self, zero_suppression=9):
+    def draw(self, zero_suppression=9, show=True):
         """
         """
         matrix = xpol.pHexagonalMatrix(self.num_columns(), self.num_rows(),
@@ -207,7 +207,8 @@ class pXpeEventWindowed(pXpeEventBase):
                     col = 'white'
                 plt.text(x, y, '%s' % val, horizontalalignment='center',
                          verticalalignment='center', size=8, color=col)
-        plt.show()
+        if show:
+            plt.show()
 
     def __str__(self):
         """
