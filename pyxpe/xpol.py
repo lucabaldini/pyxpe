@@ -184,7 +184,7 @@ class pHexagonalMatrix():
         # Calculate a something proportional to the hexagon area in px**2.
         scale = max((ymax - ymin), (xmax - xmin))
         dim = (dim/scale*0.8*self.COLUMN_PITCH)**2
-        # Create the hexagin collection.
+        # Create the hexagon collection.
         poly = collections.RegularPolyCollection(6,
                                                  offsets=self.grid(),
                                                  sizes=(dim,),

@@ -313,7 +313,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=formatter)
     parser.add_argument('infile', type=str,
                         help='the input binary file')
-    parser.add_argument('num_events', type=int,
+    parser.add_argument('-n', '--num_events', type=int, default=10,
                         help = 'number of events to be processed')
     args = parser.parse_args()
     test_windowed(args.infile, args.num_events)

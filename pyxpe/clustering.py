@@ -116,6 +116,11 @@ class xpeCluster:
         self.mom2_long = numpy.sum(dxp**2*self.adc_values)/self.pulse_height
         self.mom2_trans = numpy.sum(dyp**2*self.adc_values)/self.pulse_height
 
+    def draw(self):
+        """Draw the cluster.
+        """
+        
+
     def __str__(self):
         """String formatting.
         """
