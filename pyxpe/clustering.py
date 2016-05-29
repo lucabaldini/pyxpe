@@ -22,7 +22,7 @@
 import numpy
 
 from pyxpe.event import pXpeBinaryFileWindowed
-from pyxpe.xpol import XPOL_MATRIX
+from pyxpe.xpol import XPOL_MATRIX, XPOL_COLUMN_PITCH
 
 
 class p2dPoint(numpy.ndarray):
@@ -81,10 +81,15 @@ class pCluster:
         self.__compute_baricenter()
         self.__do_moments_analysis()
 
-    def size(self):
+    def num_pixels(self):
         """Return the cluster size.
         """
         return len(self.adc_values)
+
+    def __cmp__(self, other):
+        """
+        """
+        return other.pulse_height - self.pulse_height
 
     def __compute_pulse_height(self):
         """Calculate the pulse height of the cluster.
@@ -111,9 +116,15 @@ class pCluster:
         self.mom2_long = numpy.sum(dxp**2*self.adc_values)/self.pulse_height
         self.mom2_trans = numpy.sum(dyp**2*self.adc_values)/self.pulse_height
 
+    def __str__(self):
+        """String formatting.
+        """
+        return 'Cluster @ %s, %d pixels, pulse height = %d ADC counts' %\
+            (self.baricenter, self.num_pixels(), self.pulse_height)
+
 
     
-def single_clustering(event, zero_suppression=10):
+def single_clustering(event, zero_suppression=9):
     """Dummy single-clustering algorithm for testing purposes.
 
     This takes all the pixels above the zero-suppression threshold in the window
@@ -122,7 +133,68 @@ def single_clustering(event, zero_suppression=10):
     adc_values =  event.adc_counts[event.adc_counts >= zero_suppression]
     col, row = numpy.where(event.adc_counts >= zero_suppression)
     x, y = XPOL_MATRIX.pixel2world_recon(event.xmin + col, event.ymin + row)
-    return pCluster(x, y, adc_values)
+    return [pCluster(x, y, adc_values)]
+
+
+
+def hierarchical_clustering(event, zero_suppression=9, method='single',
+                            metric='euclidean', criterion='distance',
+                            max_distance=1.001*XPOL_COLUMN_PITCH):
+    """Lightweight wrapper over the scipy.cluster.hierarchy module.
+
+    This is essentially calling scipy.cluster.hierarchy.linkage and
+    scipy.cluster.hierarchy.fcluster, returning a list of pCluster objects
+    sorted by pulse height.
+
+    The default parameters in the method signature are those producing the
+    behaviour you would naively expect, i.e., contiguous pixels are gruped
+    together in the same cluster (the clustering is done using the
+    pixel-to-pixel euclidean distance and the distance cut is placed just above
+    the longest among the readout pitches in the two directions).
+
+    Warning
+    -------
+    Do not mess around with the function arguments unless you know what you're
+    doing---scipy is capable of producing a surprising variety of different
+    behaviours, and the problem we're trying to solve here is fairly simple.
+
+    Args
+    ----
+    event : pXpeEventBase instance
+        The underlying event object.
+
+    zero_suppression : float or array
+        The zero suppression threshold.
+
+    method : str (default 'single')
+        The clustering method passed to scipy.cluster.hierarchy.linkage
+
+    metric : str (default 'euclidean')
+        The metric passed to scipy.cluster.hierarchy.linkage
+
+    criterion: str (default 'distance')
+        The criterion passed to scipy.cluster.hierarchy.fcluster
+
+    max_distance : float
+        The maximum distance used by scipy.cluster.hierarchy.fcluster
+
+    Return
+    ------
+    a list of pCluster objects sorted by pulse height.
+    """
+    import scipy.cluster.hierarchy
+    adc_values =  event.adc_counts[event.adc_counts >= zero_suppression]
+    col, row = numpy.where(event.adc_counts >= zero_suppression)
+    x, y = XPOL_MATRIX.pixel2world(event.xmin + col, event.ymin + row)
+    data = numpy.vstack((x, y),).transpose()
+    Z = scipy.cluster.hierarchy.linkage(data, method, metric)
+    clusters = scipy.cluster.hierarchy.fcluster(Z, max_distance, criterion)
+    cluster_list = []
+    for i in xrange(1, max(clusters) + 1):
+        _mask = numpy.where(clusters == i)
+        cluster_list.append(pCluster(x[_mask], y[_mask], adc_values[_mask]))
+    cluster_list.sort()
+    return cluster_list
 
 
 
@@ -133,9 +205,12 @@ def test(filePath, num_events):
     for i in xrange(num_events):
         event = input_file.next()
         print event
-        cluster = single_clustering(event, 9)
-        print cluster.size(), cluster.pulse_height, cluster.baricenter,\
-            cluster.phi0, cluster.mom2_long, cluster.mom2_trans
+        cluster_list = hierarchical_clustering(event)
+        print len(cluster_list)
+        for cluster in cluster_list:
+            print cluster
+        cluster = cluster_list[0]
+        print cluster.phi0, cluster.mom2_long, cluster.mom2_trans
         event.draw()
 
 
@@ -146,7 +221,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=formatter)
     parser.add_argument('infile', type=str,
                         help='the input binary file')
-    parser.add_argument('--num_events', type=int, default=10,
+    parser.add_argument('--num_events', type=int, default=9,
                         help = 'number of events to be processed')
     args = parser.parse_args()
     test(args.infile, args.num_events)

@@ -138,7 +138,7 @@ class pXpeEventWindowed(pXpeEventBase):
         """
         return self.adc_counts.max()
 
-    def pulse_height(self, zero_suppression=10):
+    def pulse_height(self, zero_suppression=9):
         """Return the total pulse height for the event, i.e., the raw sum of
         all the ADC values above the zero-suppression threshold.
         """
@@ -150,7 +150,7 @@ class pXpeEventWindowed(pXpeEventBase):
         return xpol.pHexagonalMatrix(self.num_columns(), self.num_rows(),
                                      self.xmin, self.ymin)
 
-    def ascii(self, zero_suppression=10, max_threshold=0.75, width=4,
+    def ascii(self, zero_suppression=9, max_threshold=0.75, width=4,
               color=True):
         """Return a pretty-printed ASCII representation of the event.
         """
@@ -181,12 +181,12 @@ class pXpeEventWindowed(pXpeEventBase):
             text += '\n%s|\n' % (' '*(2*width + 1))
         return text
 
-    def draw_ascii(self, threshold=10):
+    def draw_ascii(self, zero_suppression=9):
         """
         """
-        print(self.ascii())
+        print(self.ascii(zero_suppression))
 
-    def draw(self, zero_suppression=10):
+    def draw(self, zero_suppression=9):
         """
         """
         matrix = xpol.pHexagonalMatrix(self.num_columns(), self.num_rows(),

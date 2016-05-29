@@ -27,6 +27,8 @@ from matplotlib import collections, transforms
 
 XPOL_NUM_COLUMNS = 300
 XPOL_NUM_ROWS = 352
+XPOL_COLUMN_PITCH = 0.0500
+XPOL_ROW_PITCH = 0.0433
 
 
 class pHexagonalMatrix():
@@ -34,6 +36,7 @@ class pHexagonalMatrix():
     """Class describing an hexagonally-arranged sampling matrix.
     """
 
+    # Remove and replace with the module-wide values.
     COLUMN_PITCH = 0.0500
     ROW_PITCH = 0.0433
 
