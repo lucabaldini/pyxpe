@@ -46,7 +46,9 @@ class xpeCluster:
         _x = numpy.sum(self.x*self.adc_values)/self.pulse_height
         _y = numpy.sum(self.y*self.adc_values)/self.pulse_height
         self.baricenter = xpePoint2d(_x, _y)
+        # Run a first moments analysis with all the pixels.
         self.phi0, self.mom2_long, self.mom2_trans = self.do_moments_analysis()
+        self.axis = xpeRay2d(self.baricenter, self.phi0)
 
     def num_pixels(self):
         """Return the cluster size.
@@ -59,18 +61,35 @@ class xpeCluster:
         return other.pulse_height - self.pulse_height
 
     def do_moments_analysis(self, pivot=None, weights=None):
-        """Run a two-dimensional moments analysis.
+        """Run a two-dimensional moments analysis on the cluster.
+        
+        Args
+        ----
+        pivot : xpePoint2d instance
+            The pivot point for the moments analysis (by defaults is the
+            baricenter of the cluster).
+
+        weights : array
+            A set of weights for the moments analysis.
         """
+        # Calculate the offsets with respect to the pivot.
         pivot = pivot or self.baricenter
         dx = (self.x - pivot.x())
         dy = (self.y - pivot.y())
+        # Solve for the angle of the principal axis.
         num = 2*numpy.sum(dx*dy*self.adc_values)
         den = numpy.sum((dy**2. - dx**2.)*self.adc_values)
         phi = -0.5*numpy.arctan(num/den)
+        # Calculate the eigenvalues of the inertia tensor.
         dxp = numpy.cos(phi)*dx + numpy.sin(phi)*dy
         dyp = -numpy.sin(phi)*dx + numpy.cos(phi)*dy
         mom2_long = numpy.sum(dxp**2*self.adc_values)/self.pulse_height
         mom2_trans = numpy.sum(dyp**2*self.adc_values)/self.pulse_height
+        # Need to swap the eigrnvalues?
+        if mom2_trans > mom2_long:
+            mom2_long, mom2_trans = mom2_trans, mom2_long
+            phi += 0.5*numpy.pi
+        # Return the results of the moments analysis.
         return phi, mom2_long, mom2_trans
 
     def draw(self, coordinate_system, color_map='Reds', text=True, show=True):
@@ -82,9 +101,8 @@ class xpeCluster:
             angle = numpy.pi/2.
         else:
             angle = 0
-        hex_col = xpeHexagonCollection(offsets=hit_positions,
-                                       edgecolors='gray', facecolors=colors,
-                                       rotation=angle)
+        hex_col = xpeHexagonCollection(offsets=hit_positions, rotation=angle,
+                                       edgecolors='gray', facecolors=colors)
         fig = hex_col.figure
         if text:
             adc_ref = 0.5*self.adc_values.max()
@@ -98,6 +116,7 @@ class xpeCluster:
         plt.xlabel('x [mm]')
         plt.ylabel('y [mm]')
         self.baricenter.draw()
+        self.axis.draw()
         if show:
             plt.show()
 
