@@ -215,7 +215,7 @@ if __name__ == '__main__':
                         help = 'number of events to be processed')
     parser.add_argument('-z', '--zero-suppression', type=int, default=9,
                         help = 'zero-suppression threshold')
-    parser.add_argument('-c', '--coordinate-system', type=str, default='xpedaq',
+    parser.add_argument('-c', '--coordinate-system', type=str, default='pixy',
                         help = 'coordinate system for the clustering')
     args = parser.parse_args()
     test(args.infile, args.num_events, args.zero_suppression,
