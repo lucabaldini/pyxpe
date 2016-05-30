@@ -147,8 +147,8 @@ class pXpeEventWindowed(pXpeEventBase):
     def matrix(self):
         """
         """
-        return xpol.pHexagonalMatrix(self.num_columns(), self.num_rows(),
-                                     self.xmin, self.ymin)
+        return xpol.xpeHexagonalMatrix(self.num_columns(), self.num_rows(),
+                                       self.xmin, self.ymin)
 
     def ascii(self, zero_suppression=9, max_threshold=0.75, width=4,
               color=True):
@@ -189,15 +189,16 @@ class pXpeEventWindowed(pXpeEventBase):
     def draw(self, zero_suppression=9, show=True):
         """
         """
-        matrix = xpol.pHexagonalMatrix(self.num_columns(), self.num_rows(),
-                                       self.xmin, self.ymin)
-        _vals = self.adc_counts.flatten()
+        matrix = xpol.xpeHexagonalMatrix(self.num_columns(), self.num_rows(),
+                                         self.xmin, self.ymin)
+        #_vals = self.adc_counts.flatten()
         _maxval = float(self.adc_counts.max())
-        _vals[_vals < zero_suppression] = -1.
-        _vals = _vals/_maxval
-        cmap = matplotlib.cm.get_cmap('Reds')
-        cmap.set_under('white')
-        _colors = cmap(_vals)
+        #_vals[_vals < zero_suppression] = -1.
+        #_vals = _vals/_maxval
+        #cmap = matplotlib.cm.get_cmap('Reds')
+        #cmap.set_under('white')
+        #_colors = cmap(_vals)
+        _colors = matrix.adc2colors(self.adc_counts, zero_suppression)
         matrix.draw(colors=_colors, show=False)
         for (x, y), val in zip(matrix.grid(), self.adc_counts.flatten()):
             if val >= zero_suppression:

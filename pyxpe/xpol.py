@@ -20,6 +20,7 @@
 
 
 import numpy
+import matplotlib
 
 import matplotlib.pyplot as plt
 from matplotlib import collections, transforms
@@ -31,14 +32,22 @@ XPOL_COLUMN_PITCH = 0.0500
 XPOL_ROW_PITCH = 0.0433
 
 
-class pHexagonalMatrix():
+class xpeHexagonCollection(collections.RegularPolyCollection):
+
+    """Specialized collections.RegularPolyCollection with `numsides` set to 6.
+    """
+
+    def __init__(self, **kwargs):
+        """Constructor.
+        """
+        collections.RegularPolyCollection.__init__(self, numsides=6, **kwargs)
+
+
+
+class xpeHexagonalMatrix():
 
     """Class describing an hexagonally-arranged sampling matrix.
     """
-
-    # Remove and replace with the module-wide values.
-    COLUMN_PITCH = 0.0500
-    ROW_PITCH = 0.0433
 
     def __init__(self, num_columns, num_rows, start_column=0, start_row=0):
         """Constructor.
@@ -86,8 +95,8 @@ class pHexagonalMatrix():
         from left to right and the y coordinate is spanning the rows from top
         to bottom.
         """
-        x = (col + 0.5*(row % 2))*self.COLUMN_PITCH
-        y = -row*self.ROW_PITCH
+        x = (col + 0.5*(row % 2))*XPOL_COLUMN_PITCH
+        y = -row*XPOL_ROW_PITCH
         return (x, y)
 
     def pixel2world_recon(self, col, row):
@@ -95,22 +104,22 @@ class pHexagonalMatrix():
 
         This is using the reconstruction coordinate system.
         """
-        x = (row - 0.5*(XPOL_NUM_ROWS - 1))*self.ROW_PITCH
-        y = (col - 0.5*(XPOL_NUM_COLUMNS - 0.5 + row % 2))*self.COLUMN_PITCH
+        x = (row - 0.5*(XPOL_NUM_ROWS - 1))*XPOL_ROW_PITCH
+        y = (col - 0.5*(XPOL_NUM_COLUMNS - 0.5 + row % 2))*XPOL_COLUMN_PITCH
         return (x, y)
 
     def asic2recon(self, x, y):
         """Convert from ASIC coordinates to recon coordinates.
         """
-        _x = -(y + 0.5*(XPOL_NUM_ROWS - 1)*self.ROW_PITCH)
-        _y = x - 0.5*(XPOL_NUM_COLUMNS - 0.5)*self.COLUMN_PITCH
+        _x = -(y + 0.5*(XPOL_NUM_ROWS - 1)*XPOL_ROW_PITCH)
+        _y = x - 0.5*(XPOL_NUM_COLUMNS - 0.5)*XPOL_COLUMN_PITCH
         return (_x, _y)
 
     def recon2asic(self, x, y):
         """Convert from recon coordiates to ASIC coordinates.
         """
-        _x = y + 0.5*(XPOL_NUM_COLUMNS - 0.5)*self.COLUMN_PITCH
-        _y = -(x + 0.5*(XPOL_NUM_ROWS - 1)*self.ROW_PITCH)
+        _x = y + 0.5*(XPOL_NUM_COLUMNS - 0.5)*XPOL_COLUMN_PITCH
+        _y = -(x + 0.5*(XPOL_NUM_ROWS - 1)*XPOL_ROW_PITCH)
         return (_x, _y)
 
     def border(self, col, row):
@@ -150,17 +159,23 @@ class pHexagonalMatrix():
         f.close()
 
     def frame(self, padding=0.1):
-        """Return a (xmin, ymin, xmax, ymax) containing the entire matrix.
+        """Return a (xmin, ymin, xmax, ymax) tuple, in physical units,
+        containing the entire matrix.
+
+        Args
+        ----
+        padding : float
+            Fractional padding on the four edges.
         """
         xmin, ymin = self.pixel2world(self.start_column,
                                       self.start_row + self.num_rows - 1)
         xmax, ymax = self.pixel2world(self.start_column + self.num_columns - 1,
                                       self.start_row)
         # Make sure we include the pixel edges.
-        xmin -= 0.5*self.COLUMN_PITCH
-        xmax += 0.5*self.COLUMN_PITCH
-        ymin -= 0.5*self.ROW_PITCH
-        ymin += 0.5*self.ROW_PITCH
+        xmin -= 0.5*XPOL_COLUMN_PITCH
+        xmax += 0.5*XPOL_COLUMN_PITCH
+        ymin -= 0.5*XPOL_ROW_PITCH
+        ymin += 0.5*XPOL_ROW_PITCH
         # Add the padding.
         dx = padding*(xmax - xmin)
         dy = padding*(ymax - ymin)
@@ -170,7 +185,7 @@ class pHexagonalMatrix():
         ymax += dy
         return xmin, ymin, xmax, ymax
 
-    def draw(self, colors='white', show=True):
+    def figure(self):
         """
         """
         xmin, ymin, xmax, ymax = self.frame()
@@ -179,19 +194,41 @@ class pHexagonalMatrix():
         ax.set_xlim([xmin, xmax])
         ax.set_ylim([ymin, ymax])
         # Overall average canvas dimensions in pixels.
-        dim = (ax.transData.transform((xmin, ymin)) -
-               ax.transData.transform((xmax, ymax))).mean()
+        pixel_area = (ax.transData.transform((xmin, ymin)) -
+                         ax.transData.transform((xmax, ymax))).mean()
         # Calculate a something proportional to the hexagon area in px**2.
         scale = max((ymax - ymin), (xmax - xmin))
-        dim = (dim/scale*0.8*self.COLUMN_PITCH)**2
-        # Create the hexagon collection.
-        poly = collections.RegularPolyCollection(6,
-                                                 offsets=self.grid(),
-                                                 sizes=(dim,),
-                                                 transOffset=ax.transData,
-                                                 facecolors=colors,
-                                                 edgecolors='gray')
-        ax.add_collection(poly, autolim=True)
+        pixel_area = (pixel_area/scale*0.8*XPOL_COLUMN_PITCH)**2
+        return fig, ax, pixel_area
+
+    @classmethod
+    def adc2colors(self, adc_values, zero_suppression=9, color_map='Reds'):
+        """Convert an array of ADC values to colors.
+        
+        Args
+        ----
+        adc_values : array
+            The array of adc values.
+
+        color_map : str
+            The name of the color map to be used for the conversion.
+        """
+        adc_values = adc_values.flatten()
+        adc_max = float(adc_values.max())
+        adc_values[adc_values < zero_suppression] = -1.
+        adc_values = adc_values/adc_max
+        cmap = matplotlib.cm.get_cmap(color_map)
+        cmap.set_under('white')
+        return cmap(adc_values)
+
+    def draw(self, colors='white', show=True):
+        """
+        """
+        fig, ax, pixel_area = self.figure()
+        hex_col = xpeHexagonCollection(offsets=self.grid(), sizes=(pixel_area,),
+                                       transOffset=ax.transData,
+                                       edgecolors='gray', facecolors=colors)
+        ax.add_collection(hex_col, autolim=True)
         plt.grid()
 
         def _htxt(x, y, s, **kwargs):
@@ -224,7 +261,7 @@ class pHexagonalMatrix():
 
 
 
-class pXpolMatrix(pHexagonalMatrix):
+class xpeXpolMatrix(xpeHexagonalMatrix):
 
     """
     """
@@ -232,7 +269,7 @@ class pXpolMatrix(pHexagonalMatrix):
     def __init__(self):
         """Constructor.
         """
-        pHexagonalMatrix.__init__(self, XPOL_NUM_COLUMNS, XPOL_NUM_ROWS, 0, 0)
+        xpeHexagonalMatrix.__init__(self, XPOL_NUM_COLUMNS, XPOL_NUM_ROWS, 0, 0)
 
     def draw(self):
         """Overloaded draw method.
@@ -244,12 +281,12 @@ class pXpolMatrix(pHexagonalMatrix):
 """I am sure we don't need this after all, when the conversion functions are
 factored out of the base class.
 """
-XPOL_MATRIX = pXpolMatrix()
+XPOL_MATRIX = xpeXpolMatrix()
 
 
 
 if __name__ == '__main__':
-    matrix = pHexagonalMatrix(30, 36, 0, 0)
+    matrix = xpeHexagonalMatrix(30, 36, 0, 0)
     matrix.draw(show=False)
     plt.show()
 
