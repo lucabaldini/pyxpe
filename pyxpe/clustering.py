@@ -23,7 +23,7 @@ import numpy
 import matplotlib.pyplot as plt
 
 from matplotlib import collections, transforms
-from pyxpe.xpol import XPOL_MATRIX, XPOL_COLUMN_PITCH
+from pyxpe.xpol import XPOL_COLUMN_PITCH
 
 
 
@@ -217,7 +217,7 @@ def test(filePath, num_events, zero_suppression=9, coordinate_system='pixy'):
         cluster = cluster_list[0]
         print cluster
         print cluster.phi0, cluster.mom2_long, cluster.mom2_trans
-        event.draw(zero_suppression, coordinate_system, show=False)
+        event.draw(zero_suppression, show=False)
         cluster.baricenter.draw()
 
 

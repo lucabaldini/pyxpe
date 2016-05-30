@@ -58,7 +58,7 @@ def pixel2world_pixy(col, row):
     return (_x, _y)
 
 
-def pixel2world(col, row, coordinate_system):
+def pixel2world(col, row, coordinate_system='xpedaq'):
     """Convert from pixel coordinates to world coordinates.
     """
     if coordinate_system == 'xpedaq':
@@ -85,6 +85,25 @@ def recon2asic(x, y):
     return (_x, _y)
 
 
+def adc2colors(adc_values, zero_suppression=0, color_map='Reds'):
+    """Convert an array of ADC values to colors.
+    
+    Args
+    ----
+    adc_values : array
+        The array of adc values.
+    
+    color_map : str
+        The name of the color map to be used for the conversion.
+    """
+    adc_values = adc_values.flatten()
+    adc_values[adc_values <= zero_suppression] = -1.
+    adc_values = adc_values/float(adc_values.max())
+    cmap = matplotlib.cm.get_cmap(color_map)
+    cmap.set_under('white')
+    return cmap(adc_values)
+
+
 
 class xpeHexagonCollection(collections.RegularPolyCollection):
 
@@ -94,10 +113,32 @@ class xpeHexagonCollection(collections.RegularPolyCollection):
     def __init__(self, **kwargs):
         """Constructor.
         """
+        offsets = kwargs.get('offsets')
+        xmin, ymax = offsets[0]
+        xmax, ymin = offsets[-1]
+        padding = kwargs.get('padding', 0.1)
+        dx = padding*(xmax - xmin)
+        dy = padding*(ymax - ymin)
+        xmin -= dx
+        xmax += dx
+        ymin -= dy
+        ymax += dy
+        fig = plt.figure(figsize=(10, 10), dpi=80, facecolor='w')
+        ax = plt.subplot(111, aspect='equal', adjustable='box-forced')
+        ax.set_xlim([xmin, xmax])
+        ax.set_ylim([ymin, ymax])
+        # Calculate a something proportional to the hexagon area in px**2.
+        hex_area = (ax.transData.transform((xmin, ymin)) -
+                    ax.transData.transform((xmax, ymax))).mean()
+        scale = max((ymax - ymin), (xmax - xmin))
+        hex_area = (hex_area/scale*0.8*XPOL_COLUMN_PITCH)**2
+        kwargs['sizes'] = (hex_area,)
+        kwargs['transOffset'] = ax.transData
         collections.RegularPolyCollection.__init__(self, numsides=6, **kwargs)
+        ax.add_collection(self, autolim=True)
 
 
-
+    
 class xpeHexagonalMatrix():
 
     """Class describing an hexagonally-arranged sampling matrix.
@@ -110,71 +151,23 @@ class xpeHexagonalMatrix():
         self.num_rows = num_rows
         self.start_column = start_column
         self.start_row = start_row
-        self.__grid = None
+        self.__pixel_positions = None
 
-    def __compute_grid(self, mode='asic'):
-        """Precompute a grid of pixel offsets (in physical coordinates) for the
-        matrix.
+    def compute_pixel_positions(self):
+        """Compute 
         """
-        if mode == 'asic':
-            _f = self.pixel2world_asic
-        elif mode == 'recon':
-            _f = self.pixel2world_recon
-        self.__grid = []
-        for col in xrange(self.start_column, self.start_column + \
+        self.__pixel_positions = []
+        for col in xrange(self.start_column, self.start_column +
                           self.num_columns):
             for row in xrange(self.start_row, self.start_row + self.num_rows):
-                self.__grid.append(_f(col, row))
+                self.__pixel_positions.append(pixel2world_xpedaq(col, row))
 
-    def grid(self):
-        """Return the underlying grid.
-
-        This is calculating and caching the grid, if the operation hasn't been
-        done already.
+    def pixel_positions(self):
         """
-        if self.__grid is None:
-            self.__compute_grid()
-        return self.__grid
-
-    def pixel2world(self, col, row):
-        """Convert from pixel coordinates to world coordinates.
         """
-        return self.pixel2world_asic(col, row)
-
-    def pixel2world_asic(self, col, row):
-        """Convert from pixel coordinates to world coordinates.
-
-        This is using the DAQ coordinate system, where the origin is in the
-        top-left corner of the array, the x coordinate is spanning the columns
-        from left to right and the y coordinate is spanning the rows from top
-        to bottom.
-        """
-        x = (col + 0.5*(row % 2))*XPOL_COLUMN_PITCH
-        y = -row*XPOL_ROW_PITCH
-        return (x, y)
-
-    def pixel2world_recon(self, col, row):
-        """Convert from pixel coordinates to world coordinates.
-
-        This is using the reconstruction coordinate system.
-        """
-        x = (row - 0.5*(XPOL_NUM_ROWS - 1))*XPOL_ROW_PITCH
-        y = (col - 0.5*(XPOL_NUM_COLUMNS - 0.5 + row % 2))*XPOL_COLUMN_PITCH
-        return (x, y)
-
-    def asic2recon(self, x, y):
-        """Convert from ASIC coordinates to recon coordinates.
-        """
-        _x = -(y + 0.5*(XPOL_NUM_ROWS - 1)*XPOL_ROW_PITCH)
-        _y = x - 0.5*(XPOL_NUM_COLUMNS - 0.5)*XPOL_COLUMN_PITCH
-        return (_x, _y)
-
-    def recon2asic(self, x, y):
-        """Convert from recon coordiates to ASIC coordinates.
-        """
-        _x = y + 0.5*(XPOL_NUM_COLUMNS - 0.5)*XPOL_COLUMN_PITCH
-        _y = -(x + 0.5*(XPOL_NUM_ROWS - 1)*XPOL_ROW_PITCH)
-        return (_x, _y)
+        if self.__pixel_positions is None:
+            self.compute_pixel_positions()
+        return self.__pixel_positions
 
     def border(self, col, row):
         """Return true if the pixel at the specified position is on the
@@ -212,78 +205,28 @@ class xpeHexagonalMatrix():
                 chan += 1
         f.close()
 
-    def frame(self, padding=0.1):
-        """Return a (xmin, ymin, xmax, ymax) tuple, in physical units,
-        containing the entire matrix.
-
-        Args
-        ----
-        padding : float
-            Fractional padding on the four edges.
-        """
-        xmin, ymin = self.pixel2world(self.start_column,
-                                      self.start_row + self.num_rows - 1)
-        xmax, ymax = self.pixel2world(self.start_column + self.num_columns - 1,
-                                      self.start_row)
-        # Make sure we include the pixel edges.
-        xmin -= 0.5*XPOL_COLUMN_PITCH
-        xmax += 0.5*XPOL_COLUMN_PITCH
-        ymin -= 0.5*XPOL_ROW_PITCH
-        ymin += 0.5*XPOL_ROW_PITCH
-        # Add the padding.
-        dx = padding*(xmax - xmin)
-        dy = padding*(ymax - ymin)
-        xmin -= dx
-        xmax += dx
-        ymin -= dy
-        ymax += dy
-        return xmin, ymin, xmax, ymax
-
-    def figure(self):
+    def draw(self, adc_values=None, zero_suppression=0, text=True,
+             color_map='Reds', show=True):
         """
         """
-        xmin, ymin, xmax, ymax = self.frame()
-        fig = plt.figure(figsize=(10, 10), dpi=80, facecolor='w')
-        ax = plt.subplot(111, aspect='equal', adjustable='box-forced')
-        ax.set_xlim([xmin, xmax])
-        ax.set_ylim([ymin, ymax])
-        # Overall average canvas dimensions in pixels.
-        pixel_area = (ax.transData.transform((xmin, ymin)) -
-                         ax.transData.transform((xmax, ymax))).mean()
-        # Calculate a something proportional to the hexagon area in px**2.
-        scale = max((ymax - ymin), (xmax - xmin))
-        pixel_area = (pixel_area/scale*0.8*XPOL_COLUMN_PITCH)**2
-        return fig, ax, pixel_area
-
-    @classmethod
-    def adc2colors(self, adc_values, zero_suppression=9, color_map='Reds'):
-        """Convert an array of ADC values to colors.
-        
-        Args
-        ----
-        adc_values : array
-            The array of adc values.
-
-        color_map : str
-            The name of the color map to be used for the conversion.
-        """
-        adc_values = adc_values.flatten()
-        adc_max = float(adc_values.max())
-        adc_values[adc_values <= zero_suppression] = -1.
-        adc_values = adc_values/adc_max
-        cmap = matplotlib.cm.get_cmap(color_map)
-        cmap.set_under('white')
-        return cmap(adc_values)
-
-    def draw(self, colors='white', show=True):
-        """
-        """
-        fig, ax, pixel_area = self.figure()
-        hex_col = xpeHexagonCollection(offsets=self.grid(), sizes=(pixel_area,),
-                                       transOffset=ax.transData,
+        if adc_values is not None:
+            colors = adc2colors(adc_values, zero_suppression, color_map)
+        else:
+            colors = 'white'
+        hex_col = xpeHexagonCollection(offsets=self.pixel_positions(),
                                        edgecolors='gray', facecolors=colors)
-        ax.add_collection(hex_col, autolim=True)
+        fig = hex_col.figure
         plt.grid()
+        if text and adc_values is not None:
+            for (x, y), val in zip(self.pixel_positions(),
+                                   adc_values.flatten()):
+                if val > zero_suppression:
+                    if val < 0.5*adc_values.max():
+                        col = 'black'
+                    else:
+                        col = 'white'
+                    plt.text(x, y, '%s' % val, horizontalalignment='center',
+                             verticalalignment='center', size=8, color=col)
 
         def _htxt(x, y, s, **kwargs):
             """
@@ -297,17 +240,17 @@ class xpeHexagonalMatrix():
             return plt.text(x - 0.03, y, '%s' % s, horizontalalignment='right',
                             verticalalignment='center', **kwargs)  
 
-        x1, y1 = self.__grid[0]
-        x2, y2 = self.__grid[-2]
-        x3, y3 = self.__grid[-1]
+        x1, y1 = self.__pixel_positions[0]
+        x2, y2 = self.__pixel_positions[-2]
+        x3, y3 = self.__pixel_positions[-1]
         ht1 = _htxt(x1, y1, self.start_column)
         ht2 = _htxt(x2, y1, self.start_column + self.num_columns - 1)
         ht3 = _htxt(0.5*(x1 + x2), y1, '--- Readout column ---')        
         vt1 = _vtxt(x1, y1, self.start_row)
         vt2 = _vtxt(x1, y3, self.start_row + self.num_rows - 1)
         vt3 = _vtxt(x1, 0.5*(y1 + y3), '--- Readout row ---', rotation=90.)
-        plt.xlabel('ASIC reference frame x [mm]')
-        plt.ylabel('ASIC reference frame y [mm]')
+        plt.xlabel('XPOL reference frame x [mm]')
+        plt.ylabel('XPOL reference frame y [mm]')
         if show:
             plt.show()
         return fig
@@ -332,16 +275,9 @@ class xpeXpolMatrix(xpeHexagonalMatrix):
 
 
 
-"""I am sure we don't need this after all, when the conversion functions are
-factored out of the base class.
-"""
-XPOL_MATRIX = xpeXpolMatrix()
-
-
 
 if __name__ == '__main__':
     matrix = xpeHexagonalMatrix(30, 36, 0, 0)
-    matrix.draw(show=False)
-    plt.show()
+    matrix.draw()
 
     

@@ -195,27 +195,11 @@ class xpeEventWindowed(xpeEventBase):
         return xpeHexagonalMatrix(self.num_columns(), self.num_rows(),
                                   self.xmin, self.ymin)
 
-    def draw(self, zero_suppression=9, coordinate_system='xpedaq', show=True):
+    def draw(self, zero_suppression=9, show=True):
         """
         """
         matrix = self.window_matrix()
-        #_vals = self.adc_values.flatten()
-        _maxval = float(self.adc_values.max())
-        #_vals[_vals < zero_suppression] = -1.
-        #_vals = _vals/_maxval
-        #cmap = matplotlib.cm.get_cmap('Reds')
-        #cmap.set_under('white')
-        #_colors = cmap(_vals)
-        _colors = matrix.adc2colors(self.adc_values, zero_suppression)
-        matrix.draw(colors=_colors, show=False)
-        for (x, y), val in zip(matrix.grid(), self.adc_values.flatten()):
-            if val > zero_suppression:
-                if val < 0.5*_maxval:
-                    col = 'black'
-                else:
-                    col = 'white'
-                plt.text(x, y, '%s' % val, horizontalalignment='center',
-                         verticalalignment='center', size=8, color=col)
+        matrix.draw(self.adc_values, zero_suppression, show=False)
         if show:
             plt.show()
 
