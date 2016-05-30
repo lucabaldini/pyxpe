@@ -47,8 +47,11 @@ class xpeCluster:
         _y = numpy.sum(self.y*self.adc_values)/self.pulse_height
         self.baricenter = xpePoint2d(_x, _y)
         # Run a first moments analysis with all the pixels.
-        self.phi0, self.mom2_long, self.mom2_trans = self.do_moments_analysis()
-        self.axis = xpeRay2d(self.baricenter, self.phi0)
+        if self.num_pixels() > 2:
+            self.phi0, self.mom2_long,\
+                self.mom2_trans = self.do_moments_analysis()
+            self.axis = xpeRay2d(self.baricenter, self.phi0)
+            self.spine()
 
     def num_pixels(self):
         """Return the cluster size.
@@ -91,6 +94,23 @@ class xpeCluster:
             phi += 0.5*numpy.pi
         # Return the results of the moments analysis.
         return phi, mom2_long, mom2_trans
+
+    def spine(self):
+        """
+        """
+        print self.phi0
+        rot = numpy.array([[numpy.cos(self.phi0), numpy.sin(self.phi0)],
+                           [-numpy.sin(self.phi0), numpy.cos(self.phi0)]])
+        dx = (self.x - self.baricenter.x())
+        dy = (self.y - self.baricenter.y())
+        new = numpy.dot(rot, numpy.vstack((dx , dy),))
+        newx = new[0,:]
+        newy = new[1,:]
+        binning = numpy.linspace(newx.min(), newx.max(), 5)
+        #idx = 12
+        #print self.x[idx], self.y[idx], self.adc_values[idx],\
+        #    new[0, idx], new[1, idx]
+        #print new
 
     def draw(self, coordinate_system, color_map='Reds', text=True, show=True):
         """
