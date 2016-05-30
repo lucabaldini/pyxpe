@@ -46,7 +46,7 @@ class xpeCluster:
         _x = numpy.sum(self.x*self.adc_values)/self.pulse_height
         _y = numpy.sum(self.y*self.adc_values)/self.pulse_height
         self.baricenter = xpePoint2d(_x, _y)
-        self.__do_moments_analysis()
+        self.phi0, self.mom2_long, self.mom2_trans = self.do_moments_analysis()
 
     def num_pixels(self):
         """Return the cluster size.
@@ -58,26 +58,33 @@ class xpeCluster:
         """
         return other.pulse_height - self.pulse_height
 
-    def __do_moments_analysis(self):
-        """Do the first-step moments analysis.
+    def do_moments_analysis(self, pivot=None, weights=None):
+        """Run a two-dimensional moments analysis.
         """
-        dx = (self.x - self.baricenter.x())
-        dy = (self.y - self.baricenter.y())
+        pivot = pivot or self.baricenter
+        dx = (self.x - pivot.x())
+        dy = (self.y - pivot.y())
         num = 2*numpy.sum(dx*dy*self.adc_values)
         den = numpy.sum((dy**2. - dx**2.)*self.adc_values)
-        self.phi0 = -0.5*numpy.arctan(num/den)
-        dxp = numpy.cos(self.phi0)*dx + numpy.sin(self.phi0)*dy
-        dyp = -numpy.sin(self.phi0)*dx + numpy.cos(self.phi0)*dy
-        self.mom2_long = numpy.sum(dxp**2*self.adc_values)/self.pulse_height
-        self.mom2_trans = numpy.sum(dyp**2*self.adc_values)/self.pulse_height
+        phi = -0.5*numpy.arctan(num/den)
+        dxp = numpy.cos(phi)*dx + numpy.sin(phi)*dy
+        dyp = -numpy.sin(phi)*dx + numpy.cos(phi)*dy
+        mom2_long = numpy.sum(dxp**2*self.adc_values)/self.pulse_height
+        mom2_trans = numpy.sum(dyp**2*self.adc_values)/self.pulse_height
+        return phi, mom2_long, mom2_trans
 
-    def draw(self, color_map='Reds', text=True, show=True):
+    def draw(self, coordinate_system, color_map='Reds', text=True, show=True):
         """
         """
         hit_positions = numpy.vstack((self.x, self.y),).transpose()
         colors = adc2colors(self.adc_values, 0, color_map)
+        if coordinate_system == 'pixy':
+            angle = numpy.pi/2.
+        else:
+            angle = 0
         hex_col = xpeHexagonCollection(offsets=hit_positions,
-                                       edgecolors='gray', facecolors=colors)
+                                       edgecolors='gray', facecolors=colors,
+                                       rotation=angle)
         fig = hex_col.figure
         if text:
             adc_ref = 0.5*self.adc_values.max()
@@ -90,6 +97,7 @@ class xpeCluster:
                          verticalalignment='center', size=8, color=col)
         plt.xlabel('x [mm]')
         plt.ylabel('y [mm]')
+        self.baricenter.draw()
         if show:
             plt.show()
 
@@ -123,7 +131,7 @@ def single_clustering(event, zero_suppression, coordinate_system):
 def hierarchical_clustering(event, zero_suppression, coordinate_system,
                             method='single', metric='euclidean',
                             criterion='distance',
-                            max_distance=1.5*XPOL_COLUMN_PITCH):
+                            max_distance=1.01*XPOL_COLUMN_PITCH):
     """Lightweight wrapper over the scipy.cluster.hierarchy module.
 
     This is essentially calling scipy.cluster.hierarchy.linkage and
@@ -193,8 +201,7 @@ def test(filePath, num_events, zero_suppression=9, coordinate_system='xpedaq'):
         cluster = cluster_list[0]
         print cluster
         print cluster.phi0, cluster.mom2_long, cluster.mom2_trans
-        cluster.draw(show=False)
-        cluster.baricenter.draw()
+        cluster.draw(coordinate_system)
 
 
         

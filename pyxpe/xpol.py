@@ -43,7 +43,7 @@ def pixel2world_xpedaq(col, row):
     from left to right and the y coordinate is spanning the rows from top
     to bottom.
     """
-    _x = (col + 0.5*(row % 2))*XPOL_COLUMN_PITCH
+    _x = (col - 0.5*(row % 2))*XPOL_COLUMN_PITCH
     _y = -row*XPOL_ROW_PITCH
     return (_x, _y)
 
