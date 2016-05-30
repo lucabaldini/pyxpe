@@ -22,56 +22,10 @@
 import numpy
 import matplotlib.pyplot as plt
 
-from matplotlib import collections, transforms
 from pyxpe.xpol import XPOL_COLUMN_PITCH
+from pyxpe.geometry import xpePoint2d, xpeRay2d
+from pyxpe.xpol import xpeHexagonCollection, adc2colors
 
-
-
-class xpe2dPoint(numpy.ndarray):
-
-    """Small numpy ndarray subclass representing a point in two dimensions.
-    """
-
-    def __new__(cls, x, y, units='mm'):
-        """Look here
-        http://docs.scipy.org/doc/numpy-1.10.1/user/basics.subclassing.html
-        as to way we need __new__, as opposed to __init__, here.
-        """
-        obj = numpy.ndarray.__new__(cls, shape=(2,), dtype='d',
-                                    buffer=numpy.array([x, y]))
-        obj.units = units
-        return obj
-
-    def __array_finalize__(self, obj):
-        """Again, look at
-        http://docs.scipy.org/doc/numpy-1.10.1/user/basics.subclassing.html
-        """
-        if obj is None:
-            return
-        self.units = getattr(obj, 'units', None)
-
-    def x(self):
-        """Return the first element of the array (i.e., the x coordinate).
-        """
-        return self[0]
-        
-    def y(self):
-        """Return the second element of the array (i.e., the x coordinate).
-        """
-        return self[1]
-
-    def draw(self, show=True):
-        """
-        """
-        plt.plot(self.x(), self.y(), 'o')
-        if show:
-            plt.show()
-
-    def __str__(self):
-        """String formatting
-        """
-        return '(%.3f, %.3f) %s' % (self.x(), self.y(), self.units)
-    
 
 
 class xpeCluster:
@@ -91,7 +45,7 @@ class xpeCluster:
         # Calculate the baricenter position.
         _x = numpy.sum(self.x*self.adc_values)/self.pulse_height
         _y = numpy.sum(self.y*self.adc_values)/self.pulse_height
-        self.baricenter = xpe2dPoint(_x, _y)
+        self.baricenter = xpePoint2d(_x, _y)
         self.__do_moments_analysis()
 
     def num_pixels(self):
@@ -100,7 +54,7 @@ class xpeCluster:
         return len(self.adc_values)
 
     def __cmp__(self, other):
-        """
+        """Comparison operator (sort the clusters by pulse height).
         """
         return other.pulse_height - self.pulse_height
 
@@ -116,6 +70,28 @@ class xpeCluster:
         dyp = -numpy.sin(self.phi0)*dx + numpy.cos(self.phi0)*dy
         self.mom2_long = numpy.sum(dxp**2*self.adc_values)/self.pulse_height
         self.mom2_trans = numpy.sum(dyp**2*self.adc_values)/self.pulse_height
+
+    def draw(self, color_map='Reds', text=True, show=True):
+        """
+        """
+        hit_positions = numpy.vstack((self.x, self.y),).transpose()
+        colors = adc2colors(self.adc_values, 0, color_map)
+        hex_col = xpeHexagonCollection(offsets=hit_positions,
+                                       edgecolors='gray', facecolors=colors)
+        fig = hex_col.figure
+        if text:
+            adc_ref = 0.5*self.adc_values.max()
+            for x, y, val in zip(self.x, self.y, self.adc_values):
+                if val < adc_ref:
+                    col = 'black'
+                else:
+                    col = 'white'
+                plt.text(x, y, '%s' % val, horizontalalignment='center',
+                         verticalalignment='center', size=8, color=col)
+        plt.xlabel('x [mm]')
+        plt.ylabel('y [mm]')
+        if show:
+            plt.show()
 
     def __str__(self):
         """String formatting.
@@ -147,7 +123,7 @@ def single_clustering(event, zero_suppression, coordinate_system):
 def hierarchical_clustering(event, zero_suppression, coordinate_system,
                             method='single', metric='euclidean',
                             criterion='distance',
-                            max_distance=1.1*XPOL_COLUMN_PITCH):
+                            max_distance=1.5*XPOL_COLUMN_PITCH):
     """Lightweight wrapper over the scipy.cluster.hierarchy module.
 
     This is essentially calling scipy.cluster.hierarchy.linkage and
@@ -204,7 +180,7 @@ def hierarchical_clustering(event, zero_suppression, coordinate_system,
 
 
 
-def test(filePath, num_events, zero_suppression=9, coordinate_system='pixy'):
+def test(filePath, num_events, zero_suppression=9, coordinate_system='xpedaq'):
     """
     """
     from pyxpe.binio import xpeBinaryFileWindowed
@@ -217,7 +193,7 @@ def test(filePath, num_events, zero_suppression=9, coordinate_system='pixy'):
         cluster = cluster_list[0]
         print cluster
         print cluster.phi0, cluster.mom2_long, cluster.mom2_trans
-        event.draw(zero_suppression, show=False)
+        cluster.draw(show=False)
         cluster.baricenter.draw()
 
 
@@ -228,7 +204,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=formatter)
     parser.add_argument('infile', type=str,
                         help='the input binary file')
-    parser.add_argument('--num_events', type=int, default=9,
+    parser.add_argument('-n', '--num_events', type=int, default=10,
                         help = 'number of events to be processed')
+    parser.add_argument('-z', '--zero-suppression', type=int, default=9,
+                        help = 'zero-suppression threshold')
+    parser.add_argument('-c', '--coordinate-system', type=str, default='xpedaq',
+                        help = 'coordinate system for the clustering')
     args = parser.parse_args()
-    test(args.infile, args.num_events)
+    test(args.infile, args.num_events, args.zero_suppression,
+         args.coordinate_system)

@@ -114,8 +114,12 @@ class xpeHexagonCollection(collections.RegularPolyCollection):
         """Constructor.
         """
         offsets = kwargs.get('offsets')
-        xmin, ymax = offsets[0]
-        xmax, ymin = offsets[-1]
+        x = offsets[:,0]
+        y = offsets[:,1]
+        xmin = x.min()
+        xmax = x.max()
+        ymin = y.min()
+        ymax = y.max()
         padding = kwargs.get('padding', 0.1)
         dx = padding*(xmax - xmin)
         dy = padding*(ymax - ymin)
@@ -156,11 +160,15 @@ class xpeHexagonalMatrix():
     def compute_pixel_positions(self):
         """Compute 
         """
-        self.__pixel_positions = []
+        x = []
+        y = []
         for col in xrange(self.start_column, self.start_column +
                           self.num_columns):
             for row in xrange(self.start_row, self.start_row + self.num_rows):
-                self.__pixel_positions.append(pixel2world_xpedaq(col, row))
+                _x, _y = pixel2world_xpedaq(col, row)
+                x.append(_x)
+                y.append(_y)
+        self.__pixel_positions = numpy.vstack((x, y),).transpose()
 
     def pixel_positions(self):
         """
@@ -218,10 +226,11 @@ class xpeHexagonalMatrix():
         fig = hex_col.figure
         plt.grid()
         if text and adc_values is not None:
+            adc_ref = 0.5*adc_values.max()
             for (x, y), val in zip(self.pixel_positions(),
                                    adc_values.flatten()):
                 if val > zero_suppression:
-                    if val < 0.5*adc_values.max():
+                    if val < adc_ref:
                         col = 'black'
                     else:
                         col = 'white'
