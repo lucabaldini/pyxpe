@@ -28,16 +28,11 @@ import numpy
 import matplotlib
 import matplotlib.pyplot as plt
 
-import pyxpe.xpol as xpol
+from pyxpe.xpol import xpeHexagonalMatrix, pixel2world
 
 
 
-PIXELS_PER_BUFFER = 13200
-NUM_BUFFERS = 8
-NUM_PIXELS = PIXELS_PER_BUFFER*NUM_BUFFERS
-
-
-class pAnsiColors:
+class xpeAnsiColors:
     
     HEADER = '\033[95m'
     BLUE = '\033[94m'
@@ -50,7 +45,7 @@ class pAnsiColors:
 
 
     
-class pXpeEventBase:
+class xpeEventBase:
 
     """
     """
@@ -59,7 +54,7 @@ class pXpeEventBase:
 
 
 
-class pXpeEventFullFrame(pXpeEventBase):
+class xpeEventFullFrame(xpeEventBase):
 
     """
     """
@@ -68,16 +63,15 @@ class pXpeEventFullFrame(pXpeEventBase):
 
 
 
-class pXpeEventWindowed(pXpeEventBase):
+class xpeEventWindowed(xpeEventBase):
     
-    """
+    """Basic class representing an event aquired in windowed mode.
     """
     
     HEADER_MARKER = 65535
     HEADER_LENGTH = 20
     
-    def __init__(self, xmin, xmax, ymin, ymax, buffer_id, t1, t2, s1, s2,
-                 adc_counts):
+    def __init__(self, xmin, xmax, ymin, ymax, buffer_id, t1, t2, adc_values):
         """Constructor.
         """
         self.xmin = xmin
@@ -85,11 +79,8 @@ class pXpeEventWindowed(pXpeEventBase):
         self.ymin = ymin
         self.ymax = ymax
         self.buffer_id = buffer_id
-        self.t1 = t1
-        self.t2 = t2
-        self.s1 = s1
-        self.s2 = s2
-        self.adc_counts = adc_counts
+        self.microseconds = (t1 + t2*65534)*0.8
+        self.adc_values = adc_values
 
     def size(self):
         """Return the total number of bytes in the event.
@@ -97,12 +88,12 @@ class pXpeEventWindowed(pXpeEventBase):
         return self.HEADER_LENGTH + 2*self.num_pixels()
 
     def num_columns(self):
-        """
+        """Return the number of columns.
         """
         return (self.xmax - self.xmin + 1)
 
     def num_rows(self):
-        """
+        """Return the number of rows.
         """
         return (self.ymax - self.ymin + 1)
 
@@ -110,45 +101,53 @@ class pXpeEventWindowed(pXpeEventBase):
         """Return the total number of pixels in the window.
         """
         return self.num_rows()*self.num_columns()
-
-    def microseconds(self):
-        """Return the timestamp from the FPGA.
-        """
-        return (self.t1 + self.t2*65534)*0.8e-6
-
-    def start_seconds(self):
-        """Return the seconds from the start run.
-        """
-        return (self.s2 + self.s1*65536)
         
     def adc_value(self, col, row):
         """Return the pulse height for a given pixel in the window.
         """
-        return self.adc_counts[col, row]
+        return self.adc_values[col, row]
 
     def highest_pixel(self):
         """Return the coordinats of the pixel with the maximum value of
         ADC counts.
         """
-        return numpy.unravel_index(numpy.argmax(self.adc_counts),
-                                   self.adc_counts.shape)
+        return numpy.unravel_index(numpy.argmax(self.adc_values),
+                                   self.adc_values.shape)
 
     def highest_adc_value(self):
         """Return the maximum value of ADC counts for the pixels in the event.
         """
-        return self.adc_counts.max()
+        return self.adc_values.max()
 
-    def pulse_height(self, zero_suppression=9):
+    def pulse_height(self, zero_suppression):
         """Return the total pulse height for the event, i.e., the raw sum of
         all the ADC values above the zero-suppression threshold.
-        """
-        return self.adc_counts[self.adc_counts >= zero_suppression].sum()
 
-    def matrix(self):
+        Args
+        ----
+        zero_suppression : int
+            The zero-suppression threshold.
         """
+        return self.adc_values[self.adc_values > zero_suppression].sum()
+
+    def hit_data(self, zero_suppression, coordinate_system):
+        """Return three arrays (of the same length) containing the x and y
+        coordinates and the charge in ADC counts for all the pixels in the
+        event above the zero-suppression threshold.
+
+        Args
+        ----
+        zero_suppression : int
+            The zero-suppression threshold.
+
+        coordinate_system : str
+            The coordinate system to be used.
         """
-        return xpol.xpeHexagonalMatrix(self.num_columns(), self.num_rows(),
-                                       self.xmin, self.ymin)
+        _mask = self.adc_values > zero_suppression
+        adc_values = self.adc_values[_mask]
+        col, row = numpy.where(_mask)
+        x, y = pixel2world(self.xmin + col, self.ymin + row, coordinate_system)
+        return x, y, adc_values
 
     def ascii(self, zero_suppression=9, max_threshold=0.75, width=4,
               color=True):
@@ -172,36 +171,45 @@ class pXpeEventWindowed(pXpeEventBase):
                 adc = self.adc_value(col, row)
                 pix = _fmt % adc
                 if color and adc == _max:
-                    pix = '%s%s%s' % (pAnsiColors.RED, pix, pAnsiColors.ENDC)
+                    pix = '%s%s%s' %\
+                          (xpeAnsiColors.RED, pix, xpeAnsiColors.ENDC)
                 elif color and adc >= max_threshold*_max:
-                    pix = '%s%s%s' % (pAnsiColors.YELLOW, pix, pAnsiColors.ENDC)
-                elif color and adc >= zero_suppression:
-                    pix = '%s%s%s' % (pAnsiColors.GREEN, pix, pAnsiColors.ENDC)
+                    pix = '%s%s%s' %\
+                          (xpeAnsiColors.YELLOW, pix, xpeAnsiColors.ENDC)
+                elif color and adc > zero_suppression:
+                    pix = '%s%s%s' %\
+                          (xpeAnsiColors.GREEN, pix, xpeAnsiColors.ENDC)
                 text += pix
             text += '\n%s|\n' % (' '*(2*width + 1))
         return text
 
     def draw_ascii(self, zero_suppression=9):
-        """
+        """Print the ASCII representation of the event.
         """
         print(self.ascii(zero_suppression))
 
-    def draw(self, zero_suppression=9, show=True):
+    def window_matrix(self):
+        """Return an xpeHexagonalMatrix object corresponding to the
+        readout window.
+        """
+        return xpeHexagonalMatrix(self.num_columns(), self.num_rows(),
+                                  self.xmin, self.ymin)
+
+    def draw(self, zero_suppression=9, coordinate_system='xpedaq', show=True):
         """
         """
-        matrix = xpol.xpeHexagonalMatrix(self.num_columns(), self.num_rows(),
-                                         self.xmin, self.ymin)
-        #_vals = self.adc_counts.flatten()
-        _maxval = float(self.adc_counts.max())
+        matrix = self.window_matrix()
+        #_vals = self.adc_values.flatten()
+        _maxval = float(self.adc_values.max())
         #_vals[_vals < zero_suppression] = -1.
         #_vals = _vals/_maxval
         #cmap = matplotlib.cm.get_cmap('Reds')
         #cmap.set_under('white')
         #_colors = cmap(_vals)
-        _colors = matrix.adc2colors(self.adc_counts, zero_suppression)
+        _colors = matrix.adc2colors(self.adc_values, zero_suppression)
         matrix.draw(colors=_colors, show=False)
-        for (x, y), val in zip(matrix.grid(), self.adc_counts.flatten()):
-            if val >= zero_suppression:
+        for (x, y), val in zip(matrix.grid(), self.adc_values.flatten()):
+            if val > zero_suppression:
                 if val < 0.5*_maxval:
                     col = 'black'
                 else:
@@ -212,110 +220,15 @@ class pXpeEventWindowed(pXpeEventBase):
             plt.show()
 
     def __str__(self):
+        """String representation.
         """
-        """
-        text = 'buffer %5d, w(%3d, %3d)--(%3d, %3d), %d px, t = %d + %.5f s' %\
+        text = 'buffer %5d, w(%3d, %3d)--(%3d, %3d), %d px, t = %d us' %\
                (self.buffer_id, self.xmin, self.ymin, self.xmax, self.ymax,
-                self.num_pixels(), self.start_seconds(), self.microseconds())
+                self.num_pixels(), self.microseconds)
         return text
 
 
 
-class pXpeBinaryFileBase(file):
-
-    """ Base class for a xpedaq binary file.
-    """
-
-    def __init__(self, filePath):
-        """Constructor.
-        """
-        logging.info('Opening input binary file %s...' % filePath)
-        file.__init__(self, filePath, 'rb')
-
-    def read_word(self):
-        """Read and byte-swap a single 2-bytes binary word from file.
-
-        Note that struct.unpack returns a tuple even when we read a single
-        number, and here we're returning the first (and only) element of the
-        tuple.
-        """
-        return struct.unpack('H', self.read(2))[0]
-
-    def read_words(self, num_words):
-        """Read and byte-swap a fixed number of 2-bytes binary words from file.
-        """
-        return struct.unpack('%dH' % num_words, self.read(2*num_words))
-
-    def __iter__(self):
-        """Iterator implementation.
-        """
-        return self
-
-    def next(self):
-        """Do-nothing next() method to be reimplemented in the derived classes.
-        """
-        pass
-
-        
-
-class pXpeBinaryFileFullFrame(pXpeBinaryFileBase):
-    
-    """Binary file acquired in full-frame mode.
-    """
-
-    def next(self):
-        """Read the next event in the file.
-        """
-        data = self.read_words(NUM_PIXELS)
-        adc_counts = numpy.array(data).reshape(NUM_BUFFERS, PIXELS_PER_BUFFER)
-        return adc_counts
-            
-
-
-class pXpeBinaryFileWindowed(pXpeBinaryFileBase):
-    
-    """Binary file acquired in windowed mode.
-    """
-
-    def next(self):
-        """Read the next event in the file.
-        """
-        try:
-            header = self.read_word()
-        except Exception, e:
-            print(e)
-            raise StopIteration()
-        if header != pXpeEventWindowed.HEADER_MARKER:
-            logging.error('Event header mismatch (got %s).' % hex(header))
-            raise StopIteration()
-        xmin, xmax, ymin, ymax, buffer_id, t1, t2, s1, s2 = self.read_words(9)
-        num_columns = (xmax - xmin + 1)
-        num_rows = (ymax - ymin + 1)
-        data = self.read_words(num_rows*num_columns)
-        adc_counts = numpy.array(data).reshape((num_rows, num_columns)).T
-        return pXpeEventWindowed(xmin, xmax, ymin, ymax,
-                                 buffer_id, t1, t2, s1, s2, adc_counts)
 
 
 
-def test_windowed(filePath, num_events):
-    """
-    """
-    input_file = pXpeBinaryFileWindowed(filePath)
-    for i in xrange(args.num_events):
-        event = input_file.next()
-        print event
-        event.draw_ascii()
-        event.draw()
-
-        
-if __name__ == '__main__':
-    import argparse
-    formatter = argparse.ArgumentDefaultsHelpFormatter
-    parser = argparse.ArgumentParser(formatter_class=formatter)
-    parser.add_argument('infile', type=str,
-                        help='the input binary file')
-    parser.add_argument('-n', '--num_events', type=int, default=10,
-                        help = 'number of events to be processed')
-    args = parser.parse_args()
-    test_windowed(args.infile, args.num_events)

@@ -23,9 +23,8 @@ import numpy
 import matplotlib.pyplot as plt
 
 from matplotlib import collections, transforms
-
-from pyxpe.event import pXpeBinaryFileWindowed
 from pyxpe.xpol import XPOL_MATRIX, XPOL_COLUMN_PITCH
+
 
 
 class xpe2dPoint(numpy.ndarray):
@@ -126,7 +125,7 @@ class xpeCluster:
 
 
     
-def single_clustering(event, zero_suppression=9):
+def single_clustering(event, zero_suppression, coordinate_system):
     """Dummy single-clustering algorithm for testing purposes.
 
     This takes all the pixels above the zero-suppression threshold in the window
@@ -140,16 +139,15 @@ def single_clustering(event, zero_suppression=9):
     zero_suppression : float or array
         The zero suppression threshold.
     """
-    adc_values =  event.adc_counts[event.adc_counts >= zero_suppression]
-    col, row = numpy.where(event.adc_counts >= zero_suppression)
-    x, y = XPOL_MATRIX.pixel2world_recon(event.xmin + col, event.ymin + row)
+    x, y, adc_values = event.hit_data(zero_suppression, coordinate_system)
     return [xpeCluster(x, y, adc_values)]
 
 
 
-def hierarchical_clustering(event, zero_suppression=9, method='single',
-                            metric='euclidean', criterion='distance',
-                            max_distance=1.001*XPOL_COLUMN_PITCH):
+def hierarchical_clustering(event, zero_suppression, coordinate_system,
+                            method='single', metric='euclidean',
+                            criterion='distance',
+                            max_distance=1.1*XPOL_COLUMN_PITCH):
     """Lightweight wrapper over the scipy.cluster.hierarchy module.
 
     This is essentially calling scipy.cluster.hierarchy.linkage and
@@ -193,35 +191,33 @@ def hierarchical_clustering(event, zero_suppression=9, method='single',
     a list of xpeCluster objects sorted by pulse height.
     """
     import scipy.cluster.hierarchy
-    adc_values =  event.adc_counts[event.adc_counts >= zero_suppression]
-    col, row = numpy.where(event.adc_counts >= zero_suppression)
-    x, y = XPOL_MATRIX.pixel2world(event.xmin + col, event.ymin + row)
+    x, y, adc_values = event.hit_data(zero_suppression, coordinate_system)
     data = numpy.vstack((x, y),).transpose()
     Z = scipy.cluster.hierarchy.linkage(data, method, metric)
-    clusters = scipy.cluster.hierarchy.fcluster(Z, max_distance, criterion)
+    cluster_ids = scipy.cluster.hierarchy.fcluster(Z, max_distance, criterion)
     cluster_list = []
-    for i in xrange(1, max(clusters) + 1):
-        _mask = numpy.where(clusters == i)
+    for i in xrange(1, max(cluster_ids) + 1):
+        _mask = numpy.where(cluster_ids == i)
         cluster_list.append(xpeCluster(x[_mask], y[_mask], adc_values[_mask]))
     cluster_list.sort()
     return cluster_list
 
 
 
-def test(filePath, num_events):
+def test(filePath, num_events, zero_suppression=9, coordinate_system='pixy'):
     """
     """
-    input_file = pXpeBinaryFileWindowed(filePath)
+    from pyxpe.binio import xpeBinaryFileWindowed
+    input_file = xpeBinaryFileWindowed(filePath)
     for i in xrange(num_events):
         event = input_file.next()
         print event
-        cluster_list = hierarchical_clustering(event)
-        print len(cluster_list)
-        for cluster in cluster_list:
-            print cluster
+        cluster_list = hierarchical_clustering(event, zero_suppression,
+                                               coordinate_system)
         cluster = cluster_list[0]
+        print cluster
         print cluster.phi0, cluster.mom2_long, cluster.mom2_trans
-        event.draw(show=False)
+        event.draw(zero_suppression, coordinate_system, show=False)
         cluster.baricenter.draw()
 
 

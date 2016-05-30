@@ -26,10 +26,64 @@ import matplotlib.pyplot as plt
 from matplotlib import collections, transforms
 
 
+XPOL_PIXELS_PER_BUFFER = 13200
+XPOL_NUM_BUFFERS = 8
+XPOL_NUM_PIXELS = XPOL_PIXELS_PER_BUFFER*XPOL_NUM_BUFFERS
 XPOL_NUM_COLUMNS = 300
 XPOL_NUM_ROWS = 352
 XPOL_COLUMN_PITCH = 0.0500
 XPOL_ROW_PITCH = 0.0433
+
+
+def pixel2world_xpedaq(col, row):
+    """Convert from pixel coordinates to world coordinates.
+    
+    This is using the DAQ coordinate system, where the origin is in the
+    top-left corner of the array, the x coordinate is spanning the columns
+    from left to right and the y coordinate is spanning the rows from top
+    to bottom.
+    """
+    _x = (col + 0.5*(row % 2))*XPOL_COLUMN_PITCH
+    _y = -row*XPOL_ROW_PITCH
+    return (_x, _y)
+
+
+def pixel2world_pixy(col, row):
+    """Convert from pixel coordinates to world coordinates.
+    
+    This is using the Pixy coordinate system.
+    """
+    _x = (row - 0.5*(XPOL_NUM_ROWS - 1))*XPOL_ROW_PITCH
+    _y = (col - 0.5*(XPOL_NUM_COLUMNS - 0.5 + row % 2))*XPOL_COLUMN_PITCH
+    return (_x, _y)
+
+
+def pixel2world(col, row, coordinate_system):
+    """Convert from pixel coordinates to world coordinates.
+    """
+    if coordinate_system == 'xpedaq':
+        return pixel2world_xpedaq(col, row)
+    elif coordinate_system == 'pixy':
+        return pixel2world_pixy(col, row)
+    else:
+        sys.exit('Unsupported coordinate system (%s).' % coordinate_system)
+
+
+def asic2recon(x, y):
+    """Convert from ASIC coordinates to recon coordinates.
+    """
+    _x = -(y + 0.5*(XPOL_NUM_ROWS - 1)*XPOL_ROW_PITCH)
+    _y = x - 0.5*(XPOL_NUM_COLUMNS - 0.5)*XPOL_COLUMN_PITCH
+    return (_x, _y)
+
+
+def recon2asic(x, y):
+    """Convert from recon coordiates to ASIC coordinates.
+    """
+    _x = y + 0.5*(XPOL_NUM_COLUMNS - 0.5)*XPOL_COLUMN_PITCH
+    _y = -(x + 0.5*(XPOL_NUM_ROWS - 1)*XPOL_ROW_PITCH)
+    return (_x, _y)
+
 
 
 class xpeHexagonCollection(collections.RegularPolyCollection):
@@ -215,7 +269,7 @@ class xpeHexagonalMatrix():
         """
         adc_values = adc_values.flatten()
         adc_max = float(adc_values.max())
-        adc_values[adc_values < zero_suppression] = -1.
+        adc_values[adc_values <= zero_suppression] = -1.
         adc_values = adc_values/adc_max
         cmap = matplotlib.cm.get_cmap(color_map)
         cmap.set_under('white')
