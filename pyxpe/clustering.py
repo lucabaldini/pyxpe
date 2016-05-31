@@ -251,9 +251,8 @@ def test(filePath, num_events, zero_suppression=9, coordinate_system='xpedaq'):
     for i in xrange(num_events):
         event = input_file.next()
         print event
-        cluster_list = hierarchical_clustering(event, zero_suppression,
-                                               coordinate_system)
-        cluster = cluster_list[0]
+        cluster = hierarchical_clustering(event, zero_suppression,
+                                          coordinate_system)[0]
         print cluster
         cluster.draw(coordinate_system)
 
