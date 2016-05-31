@@ -94,8 +94,8 @@ class xpeCluster:
         yp = -numpy.sin(phi)*dx + numpy.cos(phi)*dy
         mom2_long = numpy.sum((xp**2.)*self.adc_values)/self.pulse_height
         mom2_trans = numpy.sum((yp**2.)*self.adc_values)/self.pulse_height
-        # We want mom2_long to be the highest eigenvalues, so we need to
-        # check wheteher we have to swap the eigenvalue, here. Note that
+        # We want mom2_long to be the highest eigenvalue, so we need to
+        # check wheteher we have to swap the eigenvalues, here. Note that
         # at this point phi is still comprised between -pi/2 and pi/2.
         if mom2_long < mom2_trans:
             mom2_long, mom2_trans = mom2_trans, mom2_long
