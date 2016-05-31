@@ -255,8 +255,6 @@ def test(filePath, num_events, zero_suppression=9, coordinate_system='xpedaq'):
                                                coordinate_system)
         cluster = cluster_list[0]
         print cluster
-        print cluster.phi0, cluster.mom2_long, cluster.mom2_trans,\
-            cluster.mom3_principal
         cluster.draw(coordinate_system)
 
 
