@@ -33,6 +33,7 @@ XPOL_NUM_COLUMNS = 300
 XPOL_NUM_ROWS = 352
 XPOL_COLUMN_PITCH = 0.0500
 XPOL_ROW_PITCH = 0.0433
+XPOL_COORDINATE_SYSTEMS = ['xpedaq', 'pixy']
 
 
 def pixel2world_xpedaq(col, row):

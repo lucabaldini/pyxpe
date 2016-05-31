@@ -19,8 +19,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-import logging
-logging.basicConfig(level=logging.DEBUG)
+from pyxpe.logging_ import logger
 
 import struct
 import numpy
@@ -37,7 +36,7 @@ class xpeBinaryFileBase(file):
     def __init__(self, filePath):
         """Constructor.
         """
-        logging.info('Opening input binary file %s...' % filePath)
+        logger.info('Opening input binary file %s...' % filePath)
         file.__init__(self, filePath, 'rb')
 
     def read_word(self):
@@ -99,11 +98,10 @@ class xpeBinaryFileWindowed(xpeBinaryFileBase):
         """
         try:
             header = self.read_word()
-        except Exception, e:
-            print(e)
+        except Exception:
             raise StopIteration()
         if header != xpeEventWindowed.HEADER_MARKER:
-            logging.error('Event header mismatch (got %s).' % hex(header))
+            logger.error('Event header mismatch (got %s).' % hex(header))
             raise StopIteration()
         xmin, xmax, ymin, ymax, buf_id, t1, t2, s1, s2 = self.read_words(9)
         num_columns = (xmax - xmin + 1)

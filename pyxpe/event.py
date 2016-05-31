@@ -19,8 +19,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-import logging
-logging.basicConfig(level=logging.DEBUG)
+from pyxpe.logging_ import logger
 
 import struct
 import numpy
