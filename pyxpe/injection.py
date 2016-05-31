@@ -24,27 +24,36 @@ import matplotlib.pyplot as plt
 from scipy.sparse import lil_matrix
 
 from pyxpe.binio import xpeBinaryFileWindowed
+from pyxpe.logging_ import logger
+from pyxpe.utils import xpeChrono
 
 
+def mean_variance(file_path, num_events):
+    """Step through a charge-injection binary file and calculate the
+    mean and standard deviation of the charge distribution in each pixel.
 
-def analyze_injection_run(file_path, num_events):
-    """
+    Warning
+    -------
+    Note that, since the signal in ADC counts can be a relatively large
+    number, we use Welford's algorithm for the running variance:
+    https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+    And yes, this is not a nuisance---the first attempt at using the
+    dumb running variance ended up in flames (in case you're tempted to
+    change this).
     """
     assert(file_path.endswith('.mdat'))
-    mean = lil_matrix((300, 352))
-    rms = lil_matrix((300, 352))
-    event_id = 0
+    n = numpy.zeros((300, 352), 'd')
+    mean = numpy.zeros((300, 352), 'd')
+    M2 = numpy.zeros((300, 352), 'd')
     for event in xpeBinaryFileWindowed(file_path):
-        print event
-        for (col, row) in numpy.ndindex(event.num_columns(), event.num_rows()):
-            _col = col + event.xmin
-            _row = row + event.ymin
-            _adc = event.adc_values[col, row]
-            mean[_col, _row] += _adc
-            #rms[_col, _row] += _adc**2
-        event_id += 1
-    mean /= float(event_id)
-    print mean
+        indices = (slice(event.xmin, event.xmax + 1),
+                   slice(event.ymin, event.ymax + 1),)
+        n[indices] += 1
+        delta = event.adc_values - mean[indices]
+        mean[indices] += delta/n[indices]
+        M2[indices] += delta*(event.adc_values - mean[indices])
+    rms = numpy.sqrt(M2/(n - 1))
+
     
 
 
@@ -58,4 +67,4 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--num_events', type=int, default=10,
                         help = 'number of events to be processed')
     args = parser.parse_args()
-    analyze_injection_run(args.binfile, args.num_events)
+    mean_variance(args.binfile, args.num_events)
