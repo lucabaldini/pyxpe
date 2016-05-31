@@ -47,13 +47,14 @@ def mean_variance(file_path, num_events):
     M2 = numpy.zeros((300, 352), 'd')
     for event in xpeBinaryFileWindowed(file_path):
         indices = (slice(event.xmin, event.xmax + 1),
-                   slice(event.ymin, event.ymax + 1),)
+                   slice(event.ymin, event.ymax + 1))
         n[indices] += 1
         delta = event.adc_values - mean[indices]
         mean[indices] += delta/n[indices]
         M2[indices] += delta*(event.adc_values - mean[indices])
     rms = numpy.sqrt(M2/(n - 1))
-
+    plt.matshow(rms)
+    plt.show()
     
 
 
