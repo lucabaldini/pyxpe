@@ -77,7 +77,7 @@ class xpeCluster:
 
         Warning
         -------
-        We shall be using atan2, here.
+        Shall we be using atan2, here?
         """
         # Calculate the offsets with respect to the pivot.
         dx = (self.x - pivot.x())
@@ -112,12 +112,12 @@ class xpeCluster:
         xp = self.projection1d(pivot, phi)
         return numpy.sum((xp**3)*self.adc_values)/self.pulse_height
 
-    def spline(self):
+    def fit_spline(self):
         """
         """
         from scipy.interpolate import UnivariateSpline
         weights = (self.adc_values/float(self.adc_values.max()))**0.5
-        s = UnivariateSpline(self.x, self.y, w=weights, s=1.5)
+        s = UnivariateSpline(self.x, self.y, w=weights, s=0.5)
         _x = numpy.linspace(self.x.min(), self.x.max(), 25)
         _y = s(_x)
         plt.plot(_x, _y, '-', lw=2, color='black')
@@ -147,7 +147,7 @@ class xpeCluster:
         plt.ylabel('y [mm]')
         self.baricenter.draw()
         self.axis.draw()
-        self.spline()
+        self.fit_spline()
         if show:
             plt.show()
 
