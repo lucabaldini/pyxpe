@@ -51,8 +51,12 @@ class xpeCluster:
             self.phi0, self.mom2_long,\
                 self.mom2_trans = self.do_moments_analysis(self.baricenter)
             self.axis = xpeRay2d(self.baricenter, self.phi0)
-            self.mom3_principal = self.mom3(self.baricenter, self.phi0)
-
+            self.mom3_long = self.momentum(3, self.baricenter, self.phi0)
+            # Now that we know the third moment of the charge distribution
+            # we can assign a direction to the principal axis.
+            if self.mom3_long > 0:
+                self.phi0 -= numpy.pi*numpy.sign(self.phi0)
+            
     def num_pixels(self):
         """Return the cluster size.
         """
@@ -73,28 +77,29 @@ class xpeCluster:
             baricenter of the cluster).
 
         weights : array
-            A set of weights for the moments analysis.
-
-        Warning
-        -------
-        Shall we be using atan2, here?
+            A set of weights for the moments analysis (not used, yet).
         """
         # Calculate the offsets with respect to the pivot.
         dx = (self.x - pivot.x())
         dy = (self.y - pivot.y())
-        # Solve for the angle of the principal axis.
-        num = 2*numpy.sum(dx*dy*self.adc_values)
-        den = numpy.sum((dy**2. - dx**2.)*self.adc_values)
-        phi = -0.5*numpy.arctan(num/den)
-        # Calculate the eigenvalues of the inertia tensor.
-        dxp = numpy.cos(phi)*dx + numpy.sin(phi)*dy
-        dyp = -numpy.sin(phi)*dx + numpy.cos(phi)*dy
-        mom2_long = numpy.sum(dxp**2*self.adc_values)/self.pulse_height
-        mom2_trans = numpy.sum(dyp**2*self.adc_values)/self.pulse_height
-        # Need to swap the eigrnvalues?
-        if mom2_trans > mom2_long:
+        # Solve for the angle of the principal axis (note that at this point
+        # phi is comprised between -pi/2 and pi/2 and might indicate either
+        # the major or the minor axis of the tensor of inertia).
+        A = numpy.sum(dx*dy*self.adc_values)
+        B = numpy.sum((dy**2. - dx**2.)*self.adc_values)
+        phi = -0.5*numpy.arctan2(2.*A, B)
+        # Rotate by an angle phi and calculate the eigenvalues of the tensor
+        # of inertia.
+        xp = numpy.cos(phi)*dx + numpy.sin(phi)*dy
+        yp = -numpy.sin(phi)*dx + numpy.cos(phi)*dy
+        mom2_long = numpy.sum((xp**2.)*self.adc_values)/self.pulse_height
+        mom2_trans = numpy.sum((yp**2.)*self.adc_values)/self.pulse_height
+        # We want mom2_long to be the highest eigenvalues, so we need to
+        # check wheteher we have to swap the eigenvalue, here. Note that
+        # at this point phi is still comprised between -pi/2 and pi/2.
+        if mom2_long < mom2_trans:
             mom2_long, mom2_trans = mom2_trans, mom2_long
-            phi += 0.5*numpy.pi
+            phi -= 0.5*numpy.pi*numpy.sign(phi)
         # Return the results of the moments analysis.
         return phi, mom2_long, mom2_trans
 
@@ -106,11 +111,11 @@ class xpeCluster:
         return numpy.cos(phi)*(self.x - pivot.x()) +\
             numpy.sin(phi)*(self.y - pivot.y())
 
-    def mom3(self, pivot, phi):
+    def momentum(self, order, pivot, phi):
         """
         """
         xp = self.projection1d(pivot, phi)
-        return numpy.sum((xp**3)*self.adc_values)/self.pulse_height
+        return numpy.sum((xp**order)*self.adc_values)/self.pulse_height
 
     def fit_spline(self):
         """

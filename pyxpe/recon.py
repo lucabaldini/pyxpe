@@ -60,7 +60,7 @@ def run_reconstruction(file_path, num_events=1000000000, zero_suppression=9,
             'fTheta1': -1,
             'fMomX': cluster.mom2_long,
             'fMomY': cluster.mom2_trans,
-            'fMomThirdX': cluster.mom3_principal,
+            'fMomThirdX': cluster.mom3_long,
             'fImpactX': -1,
             'fImpactY': -1,
         }
