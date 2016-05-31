@@ -111,22 +111,6 @@ class xpeCluster:
         """
         xp = self.projection1d(pivot, phi)
         return numpy.sum((xp**3)*self.adc_values)/self.pulse_height
-    
-    def spine(self):
-        """
-        """
-        rot = numpy.array([[numpy.cos(self.phi0), numpy.sin(self.phi0)],
-                           [-numpy.sin(self.phi0), numpy.cos(self.phi0)]])
-        dx = (self.x - self.baricenter.x())
-        dy = (self.y - self.baricenter.y())
-        new = numpy.dot(rot, numpy.vstack((dx , dy),))
-        newx = new[0,:]
-        newy = new[1,:]
-        binning = numpy.linspace(newx.min(), newx.max(), 5)
-        #idx = 12
-        #print self.x[idx], self.y[idx], self.adc_values[idx],\
-        #    new[0, idx], new[1, idx]
-        #print new
 
     def spline(self):
         """
@@ -139,7 +123,7 @@ class xpeCluster:
         plt.plot(_x, _y, '-', lw=2, color='black')
 
     def draw(self, coordinate_system, color_map='Reds', text=True, show=True):
-        """
+        """Draw the cluster.
         """
         hit_positions = numpy.vstack((self.x, self.y),).transpose()
         colors = adc2colors(self.adc_values, 0, color_map)
