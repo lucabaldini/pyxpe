@@ -112,7 +112,8 @@ class xpeCluster:
             numpy.sin(phi)*(self.y - pivot.y())
 
     def momentum(self, order, pivot, phi):
-        """
+        """Calculate the nth-order moment of the 1-dimensional charge
+        distribution projected on a given ray.
         """
         xp = self.projection1d(pivot, phi)
         return numpy.sum((xp**order)*self.adc_values)/self.pulse_height
