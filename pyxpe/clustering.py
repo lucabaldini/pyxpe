@@ -49,9 +49,9 @@ class xpeCluster:
         # Run a first moments analysis with all the pixels.
         if self.num_pixels() > 2:
             self.phi0, self.mom2_long,\
-                self.mom2_trans = self.do_moments_analysis()
+                self.mom2_trans = self.do_moments_analysis(self.baricenter)
             self.axis = xpeRay2d(self.baricenter, self.phi0)
-            self.spine()
+            self.mom3_principal = self.mom3(self.baricenter, self.phi0)
 
     def num_pixels(self):
         """Return the cluster size.
@@ -63,7 +63,7 @@ class xpeCluster:
         """
         return other.pulse_height - self.pulse_height
 
-    def do_moments_analysis(self, pivot=None, weights=None):
+    def do_moments_analysis(self, pivot, weights=None):
         """Run a two-dimensional moments analysis on the cluster.
         
         Args
@@ -74,9 +74,12 @@ class xpeCluster:
 
         weights : array
             A set of weights for the moments analysis.
+
+        Warning
+        -------
+        We shall be using atan2, here.
         """
         # Calculate the offsets with respect to the pivot.
-        pivot = pivot or self.baricenter
         dx = (self.x - pivot.x())
         dy = (self.y - pivot.y())
         # Solve for the angle of the principal axis.
@@ -95,10 +98,23 @@ class xpeCluster:
         # Return the results of the moments analysis.
         return phi, mom2_long, mom2_trans
 
+    def projection1d(self, pivot, phi):
+        """Project the charge distribution on the ray passing by the pivot
+        point at an angle phi, and return the corresponding one-dimensional
+        array of coordinates.
+        """
+        return numpy.cos(phi)*(self.x - pivot.x()) +\
+            numpy.sin(phi)*(self.y - pivot.y())
+
+    def mom3(self, pivot, phi):
+        """
+        """
+        xp = self.projection1d(pivot, phi)
+        return numpy.sum((xp**3)*self.adc_values)/self.pulse_height
+    
     def spine(self):
         """
         """
-        print self.phi0
         rot = numpy.array([[numpy.cos(self.phi0), numpy.sin(self.phi0)],
                            [-numpy.sin(self.phi0), numpy.cos(self.phi0)]])
         dx = (self.x - self.baricenter.x())
@@ -111,6 +127,16 @@ class xpeCluster:
         #print self.x[idx], self.y[idx], self.adc_values[idx],\
         #    new[0, idx], new[1, idx]
         #print new
+
+    def spline(self):
+        """
+        """
+        from scipy.interpolate import UnivariateSpline
+        weights = (self.adc_values/float(self.adc_values.max()))**0.5
+        s = UnivariateSpline(self.x, self.y, w=weights, s=1.5)
+        _x = numpy.linspace(self.x.min(), self.x.max(), 25)
+        _y = s(_x)
+        plt.plot(_x, _y, '-', lw=2, color='black')
 
     def draw(self, coordinate_system, color_map='Reds', text=True, show=True):
         """
@@ -137,6 +163,7 @@ class xpeCluster:
         plt.ylabel('y [mm]')
         self.baricenter.draw()
         self.axis.draw()
+        self.spline()
         if show:
             plt.show()
 
@@ -239,7 +266,8 @@ def test(filePath, num_events, zero_suppression=9, coordinate_system='xpedaq'):
                                                coordinate_system)
         cluster = cluster_list[0]
         print cluster
-        print cluster.phi0, cluster.mom2_long, cluster.mom2_trans
+        print cluster.phi0, cluster.mom2_long, cluster.mom2_trans,\
+            cluster.mom3_principal
         cluster.draw(coordinate_system)
 
 
