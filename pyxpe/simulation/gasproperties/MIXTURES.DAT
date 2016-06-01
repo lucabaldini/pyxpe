@@ -1,0 +1,35 @@
+Name1		P1	Name2		P2	Name3	P3  Sigma@1atm
+Ar              0.8     CO2             0.2     -       0       157
+Ar              0.7     DME             0.3     -       0       113
+Ar              0.6     DME             0.4     -       0       97
+Ar              0.5     DME             0.5     -       0       86
+Ar              0.4     DME             0.6     -       0       79 
+Ar              0.2     DME             0.8     -       0       74 
+Ne		0.8	DME		0.2	-	0	132
+Ne              0.5     DME             0.5     -       0       85      
+Ne              0.4     DME             0.6     -       0       77
+Ne              0.2     DME             0.8     -       0       67
+He		0.4	DME		0.6	-	0	77
+He		0.5	DME		0.5	-	0	84
+He		0.2	DME		0.8	-	0	68
+He              0.8	Isobutane       0.2     -       0       146
+He              0.8     CF4             0.2     -       0       117.75
+H               0.2     DME             0.8     -       0       67 
+CF4		0.2	DME		0.8	-	0	58.6
+CF4		0.5	DME		0.5	-	0	59.8
+CF4		0.8	Isobutane	0.2	-	0	72.26
+CF4             1       -               0       -       0       66.85
+CO2		1	-		0	-	0	72	 
+H               1       -               0       -       0       30
+Ne 		1	-		0	-	0	150 
+Ar		1	-		0	-	0       10    
+Kr              1       -               0       -       0       150 
+Xe              1       -               0       -       0       150   
+DME		1	-		0	-	0  	60	     
+Acetylene	1	-		0	-	0       83	     
+Isobutane	1	-		0.0	-	0.0	115	     
+Propane		1	-		0	-	0	0.25	  136	     
+Ethane		1	-		0	-	0	134	     
+Propane		1	-		0	-	0	1	  136	     
+Neopentane	1	-		0	-	0	1	  108	   
+Methane		1	-		-	-	-	1	  226	     

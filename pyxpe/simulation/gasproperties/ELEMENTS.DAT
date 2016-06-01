@@ -1,0 +1,20 @@
+Text file containing the names and atomic numbers of the available elements.
+FORMAT:
+ChemicalSymbol AtomicNumber AtomicWeight KEdge(keV) FluorescenceYield
+Fluorescence yields to be reviewed!!
+BEGIN:
+
+H	1	1.0079	0.014	0.0000
+He	2	4.0026  0.024	0.0000
+B	5	10.81	0.183	0.0020
+C	6	12.011	0.277	0.0028
+N	7	14.01	0.393	0.0050
+O	8	15.9994	0.525	0.0083
+F	9	18.9984	0.677	0.0150
+Ne	10	20.179	0.849	0.0180
+Al	13	26.98	1.487	0.0300
+S	16	32.06	2.308	0.0500
+Cl	17	35.45	2.622	0.0700
+Ar	18	39.948	2.958	0.1000
+Kr      36      83.80   12.40   0.7000
+Xe      54      131.30  34.50   0.8500

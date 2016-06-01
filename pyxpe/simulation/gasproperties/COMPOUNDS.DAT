@@ -1,0 +1,23 @@
+Text file containing informations about the available compounds.
+FORMAT:
+Name  NumberOfElements Nt SPower    Element1  nAtoms1  Element2  nAtoms2 ... ElementN  nAtomsN
+BEGIN:
+He		1	8   	320	He      1
+Ne		1   	43	1560 	Ne	1
+Ar		1	94	2440	Ar	1
+DME		3	160	3900	C	2	H	6	O	1
+CF4		2	100	7000	C	1	F	4
+BF3		2	0	0	B	1	F	3
+CO2		2	91     	3010	C	1	O	2
+Acetylene	2	1	30	C	2	H	2
+Methane		2	53	1480	C	1	H	4
+Ethane		2	0	0	C	2	H	6
+Ethene		2	111	1150	C	2	H	4
+Propane		2	1	30	C	3	H	8
+Isobutane	2	195	5930	C	4	H	10
+CS2		2	0	0	C	1	S	2
+Al              1       0	0	Al      1   
+Kr              1       192	4600	Kr      1
+H               1       9      	340	H       2
+Xe              1       192	4600    Xe      1
+//Propane,Acetylene messi a mano !!
