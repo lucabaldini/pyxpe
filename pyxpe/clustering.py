@@ -222,7 +222,7 @@ class xpeCluster:
     def __str__(self):
         """String formatting.
         """
-        return 'Cluster @ %s, %d pixels, pulse height = %d ADC counts' %\
+        return 'cluster @ %s, %d pixels, pulse height = %d ADC counts' %\
             (self.baricenter, self.num_pixels(), self.pulse_height)
 
 
