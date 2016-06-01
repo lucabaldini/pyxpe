@@ -19,7 +19,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-from pyxpe.event import *
+from pyxpe.binio import xpeBinaryFileWindowed
 
 
 if __name__ == '__main__':
@@ -36,7 +36,7 @@ if __name__ == '__main__':
                         help='zero-suppression threshold')
     args = parser.parse_args()
 
-    input_file = pXpeBinaryFileWindowed(args.binfile)
+    input_file = xpeBinaryFileWindowed(args.binfile)
     input_file.seek(args.offset)
     for i in xrange(args.num_events):
         event = input_file.next()
