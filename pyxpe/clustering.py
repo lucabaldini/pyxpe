@@ -108,9 +108,16 @@ class xpeCluster:
         compute the conversion point and the second-step reconstructed
         direction.
         """
+        # Initialize a few variables.
+        self.conversion_point = self.baricenter
+        self.conversion_baricenter = self.baricenter
+        self.phi1 = self.phi0
+        self.axis1 = self.axis0
         # Calculate the third moment along the principal axis of the charge
         # distribution.
         self.mom3_long = self.momentum(3, self.baricenter, self.phi0)
+        if self.mom3_long == 0:
+            return
         # Calculate the distances from the baricenter in units of the
         # longitudinal rms of the charge distribution.
         dx = (self.x - self.baricenter.x())
@@ -126,6 +133,8 @@ class xpeCluster:
         _adc_sum = float(numpy.sum(_adc))
         # Calculate the center of mass of the selected pixels---this is the
         # reconstructed conversion point.
+        if _adc_sum == 0:
+            return 
         _x = numpy.sum(self.x[_mask]*_adc)/_adc_sum
         _y = numpy.sum(self.y[_mask]*_adc)/_adc_sum
         self.conversion_point = xpePoint2d(_x, _y, color='red')
