@@ -27,8 +27,8 @@ from pyxpe.clustering import hierarchical_clustering
 from pyxpe.logging_ import logger
 
 
-def run_reconstruction(file_path, num_events=1000000000, zero_suppression=9,
-                       coordinate_system='xpedaq', output_path=None):
+def run_pixy(file_path, num_events=1000000000, zero_suppression=9,
+             coordinate_system='xpedaq', output_path=None):
     """Run the event reconstruction on a binary file.
     """
     assert(file_path.endswith('.mdat'))
@@ -46,7 +46,7 @@ def run_reconstruction(file_path, num_events=1000000000, zero_suppression=9,
             'fRunId': -1,
             'fEventId': event_id, 
             'fNClusters': len(cluster_list), 
-            'fTrigWindow': -1, 
+            'fTrigWindow': event.num_pixels(), 
             'fTimeTick': -1, 
             'fTimeStamp': -1, 
             'fBufferId': event.buffer_id, 
@@ -57,7 +57,7 @@ def run_reconstruction(file_path, num_events=1000000000, zero_suppression=9,
             'fBaricenterX': cluster.baricenter.x(),
             'fBaricenterY': cluster.baricenter.y(),
             'fTheta0': cluster.phi0,
-            'fTheta1': -1,
+            'fTheta1': cluster.phi1,
             'fMomX': cluster.mom2_long,
             'fMomY': cluster.mom2_trans,
             'fMomThirdX': cluster.mom3_long,

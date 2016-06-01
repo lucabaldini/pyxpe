@@ -74,7 +74,8 @@ class xpeCluster:
             baricenter of the cluster).
 
         weights : array
-            A set of weights for the moments analysis.
+            A set of weights for the moments analysis (default to 1---these
+            are multiplied by the pixel ADC counts).
         """
         w = self.adc_values*weights
         # Calculate the offsets with respect to the pivot.
@@ -83,15 +84,15 @@ class xpeCluster:
         # Solve for the angle of the principal axis (note that at this point
         # phi is comprised between -pi/2 and pi/2 and might indicate either
         # the major or the minor axis of the tensor of inertia).
-        A = numpy.sum(dx*dy*self.adc_values)
-        B = numpy.sum((dy**2. - dx**2.)*self.adc_values)
+        A = numpy.sum(dx*dy*w)
+        B = numpy.sum((dy**2. - dx**2.)*w)
         phi = -0.5*numpy.arctan2(2.*A, B)
         # Rotate by an angle phi and calculate the eigenvalues of the tensor
         # of inertia.
         xp = numpy.cos(phi)*dx + numpy.sin(phi)*dy
         yp = -numpy.sin(phi)*dx + numpy.cos(phi)*dy
-        mom2_long = numpy.sum((xp**2.)*self.adc_values)/self.pulse_height
-        mom2_trans = numpy.sum((yp**2.)*self.adc_values)/self.pulse_height
+        mom2_long = numpy.sum((xp**2.)*w)/self.pulse_height
+        mom2_trans = numpy.sum((yp**2.)*w)/self.pulse_height
         # We want mom2_long to be the highest eigenvalue, so we need to
         # check wheteher we have to swap the eigenvalues, here. Note that
         # at this point phi is still comprised between -pi/2 and pi/2.
@@ -145,19 +146,11 @@ class xpeCluster:
         _x = numpy.sum(self.x*self.adc_values*w)/_adc_sum
         _y = numpy.sum(self.y*self.adc_values*w)/_adc_sum
         self.conversion_baricenter = xpePoint2d(_x, _y, color='green')
-        dx = (self.x - _x)
-        dy = (self.y - _y)
-        A = numpy.sum(dx*dy*self.adc_values*w)
-        B = numpy.sum((dy**2. - dx**2.)*self.adc_values*w)
-        phi = -0.5*numpy.arctan2(2.*A, B)
-        xp = numpy.cos(phi)*dx + numpy.sin(phi)*dy
-        yp = -numpy.sin(phi)*dx + numpy.cos(phi)*dy
-        mom2_long = numpy.sum((xp**2.)*self.adc_values)/self.pulse_height
-        mom2_trans = numpy.sum((yp**2.)*self.adc_values)/self.pulse_height
-        if mom2_long < mom2_trans:
-            mom2_long, mom2_trans = mom2_trans, mom2_long
-            phi -= 0.5*numpy.pi*numpy.sign(phi)
+        phi, mom2_long,\
+            mom2_trans = self.do_moments_analysis(self.conversion_baricenter, w)
         self.phi1 = phi
+        if abs(self.phi1 - self.phi0) > 0.5*numpy.pi:
+            self.phi1 -= numpy.pi*numpy.sign(self.phi1)
         self.axis1 = xpeRay2d(self.conversion_baricenter, phi)
 
     def projection1d(self, pivot, phi):

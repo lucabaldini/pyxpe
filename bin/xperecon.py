@@ -25,7 +25,7 @@ __description__ = 'Run the XPE reconstruction'
 import os
 from pyxpe.logging_ import startmsg
 from pyxpe.xpol import XPOL_COORDINATE_SYSTEMS
-from pyxpe.recon import run_reconstruction
+from pyxpe.recon import run_pixy
 
 
 """Command-line switches.
@@ -56,7 +56,7 @@ PARSER.add_argument('-c', '--coordinate-system', type=str, default='pixy',
 def xperecon(file_path, **kwargs):
     """
     """    
-    return run_reconstruction(file_path, **kwargs)
+    return run_pixy(file_path, **kwargs)
 
 
 
