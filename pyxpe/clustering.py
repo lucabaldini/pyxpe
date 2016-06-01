@@ -46,16 +46,13 @@ class xpeCluster:
         _x = numpy.sum(self.x*self.adc_values)/self.pulse_height
         _y = numpy.sum(self.y*self.adc_values)/self.pulse_height
         self.baricenter = xpePoint2d(_x, _y)
-        # Run a first moments analysis with all the pixels.
         if self.num_pixels() > 2:
+            # Run a first moments analysis with all the pixels.
             self.phi0, self.mom2_long,\
                 self.mom2_trans = self.do_moments_analysis(self.baricenter)
-            self.axis = xpeRay2d(self.baricenter, self.phi0)
-            self.mom3_long = self.momentum(3, self.baricenter, self.phi0)
-            # Now that we know the third moment of the charge distribution
-            # we can assign a direction to the principal axis.
-            if self.mom3_long > 0:
-                self.phi0 -= numpy.pi*numpy.sign(self.phi0)
+            self.axis0 = xpeRay2d(self.baricenter, self.phi0)
+            # Run the "standard" Pixy reconstruction.
+            self.do_pixy_recon()
             
     def num_pixels(self):
         """Return the cluster size.
@@ -67,7 +64,7 @@ class xpeCluster:
         """
         return other.pulse_height - self.pulse_height
 
-    def do_moments_analysis(self, pivot, weights=None):
+    def do_moments_analysis(self, pivot, weights=1.):
         """Run a two-dimensional moments analysis on the cluster.
         
         Args
@@ -77,8 +74,9 @@ class xpeCluster:
             baricenter of the cluster).
 
         weights : array
-            A set of weights for the moments analysis (not used, yet).
+            A set of weights for the moments analysis.
         """
+        w = self.adc_values*weights
         # Calculate the offsets with respect to the pivot.
         dx = (self.x - pivot.x())
         dy = (self.y - pivot.y())
@@ -102,6 +100,65 @@ class xpeCluster:
             phi -= 0.5*numpy.pi*numpy.sign(phi)
         # Return the results of the moments analysis.
         return phi, mom2_long, mom2_trans
+
+    def do_pixy_recon(self, small_radius=1.5, large_radius=3.5,
+                      weight_scale=0.05):
+        """Run the second part of the Pixy reconstruction, i.e., that were we
+        compute the conversion point and the second-step reconstructed
+        direction.
+        """
+        # Calculate the third moment along the principal axis of the charge
+        # distribution.
+        self.mom3_long = self.momentum(3, self.baricenter, self.phi0)
+        # Calculate the distances from the baricenter in units of the
+        # longitudinal rms of the charge distribution.
+        dx = (self.x - self.baricenter.x())
+        dy = (self.y - self.baricenter.y())
+        d = numpy.sqrt(dx**2 + dy**2)/numpy.sqrt(self.mom2_long)
+        # Calculate the projection of the pixels along the major axis.
+        xp = numpy.cos(self.phi0)*dx + numpy.sin(self.phi0)*dy
+        # Select all the pixels whose distance from the baricenter is
+        # comprised withing the two radii (small and large) and are lying
+        # on the "right" side (i.e., that indicated by the third moment).
+        _mask = (d > small_radius)*(d < large_radius)*(xp/self.mom3_long > 0.)
+        _adc = self.adc_values[_mask]
+        _adc_sum = float(numpy.sum(_adc))
+        # Calculate the center of mass of the selected pixels---this is the
+        # reconstructed conversion point.
+        _x = numpy.sum(self.x[_mask]*_adc)/_adc_sum
+        _y = numpy.sum(self.y[_mask]*_adc)/_adc_sum
+        self.conversion_point = xpePoint2d(_x, _y, color='red')
+        # And now we can assign a direction to the original axis, based on the
+        # sign of the third moment. (Note that we could have done this right
+        # at the beginning, but that would have changed the logic of the
+        # conversion point calculation, and this implementation is adherent
+        # to the original code in Pixy).
+        if self.mom3_long > 0:
+            self.phi0 -= numpy.pi*numpy.sign(self.phi0)
+        # And now the second moments analysis (need to wrap all this into a
+        # single call to the do_moments_analysis() method).
+        dx = (self.x - self.conversion_point.x())
+        dy = (self.y - self.conversion_point.y())
+        d = numpy.sqrt(dx**2 + dy**2)
+        w = numpy.exp(-d/weight_scale)
+        _adc_sum = float(numpy.sum(self.adc_values*w))
+        _x = numpy.sum(self.x*self.adc_values*w)/_adc_sum
+        _y = numpy.sum(self.y*self.adc_values*w)/_adc_sum
+        self.conversion_baricenter = xpePoint2d(_x, _y, color='green')
+        dx = (self.x - _x)
+        dy = (self.y - _y)
+        A = numpy.sum(dx*dy*self.adc_values*w)
+        B = numpy.sum((dy**2. - dx**2.)*self.adc_values*w)
+        phi = -0.5*numpy.arctan2(2.*A, B)
+        xp = numpy.cos(phi)*dx + numpy.sin(phi)*dy
+        yp = -numpy.sin(phi)*dx + numpy.cos(phi)*dy
+        mom2_long = numpy.sum((xp**2.)*self.adc_values)/self.pulse_height
+        mom2_trans = numpy.sum((yp**2.)*self.adc_values)/self.pulse_height
+        if mom2_long < mom2_trans:
+            mom2_long, mom2_trans = mom2_trans, mom2_long
+            phi -= 0.5*numpy.pi*numpy.sign(phi)
+        self.phi1 = phi
+        self.axis1 = xpeRay2d(self.conversion_baricenter, phi)
 
     def projection1d(self, pivot, phi):
         """Project the charge distribution on the ray passing by the pivot
@@ -152,8 +209,11 @@ class xpeCluster:
         plt.xlabel('x [mm]')
         plt.ylabel('y [mm]')
         self.baricenter.draw()
-        self.axis.draw()
-        self.fit_spline()
+        self.axis0.draw()
+        self.conversion_point.draw()
+        self.conversion_baricenter.draw()
+        self.axis1.draw()
+        #self.fit_spline()
         if show:
             plt.show()
 

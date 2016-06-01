@@ -61,8 +61,8 @@ def run_reconstruction(file_path, num_events=1000000000, zero_suppression=9,
             'fMomX': cluster.mom2_long,
             'fMomY': cluster.mom2_trans,
             'fMomThirdX': cluster.mom3_long,
-            'fImpactX': -1,
-            'fImpactY': -1,
+            'fImpactX': cluster.conversion_point.x(),
+            'fImpactY': cluster.conversion_point.y()
         }
         output_tree.fill(_data)
         event_id += 1
