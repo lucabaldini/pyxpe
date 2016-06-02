@@ -29,7 +29,7 @@ class xpePoint2d(numpy.ndarray):
     """Small numpy ndarray subclass representing a point in two dimensions.
     """
 
-    def __new__(cls, x, y, units='mm', color='blue'):
+    def __new__(cls, x, y, units='mm'):
         """Look here
         http://docs.scipy.org/doc/numpy-1.10.1/user/basics.subclassing.html
         as to way we need __new__, as opposed to __init__, here.
@@ -37,7 +37,6 @@ class xpePoint2d(numpy.ndarray):
         obj = numpy.ndarray.__new__(cls, shape=(2,), dtype='d',
                                     buffer=numpy.array([x, y]))
         obj.units = units
-        obj.color = color
         return obj
 
     def __array_finalize__(self, obj):
@@ -58,10 +57,11 @@ class xpePoint2d(numpy.ndarray):
         """
         return self[1]
 
-    def draw(self):
+    def draw(self, **kwargs):
         """
         """
-        plt.plot(self.x(), self.y(), 'o', color=self.color)
+        kwargs['s'] = kwargs.get('s', None) or 75
+        plt.scatter(self.x(), self.y(), **kwargs)
 
     def __str__(self):
         """String formatting
@@ -81,12 +81,18 @@ class xpeRay2d:
         self.p0 = p0
         self.phi = phi
 
-    def draw(self):
+    def at(self, d):
         """
         """
-        r = 1.
+        _x = self.p0.x() + d*numpy.cos(self.phi)
+        _y = self.p0.y() + d*numpy.sin(self.phi)
+        return xpePoint2d(_x, _y)
+
+    def draw(self, r=1., **kwargs):
+        """
+        """
         x1 = self.p0.x() + r*numpy.cos(self.phi)
         x2 = self.p0.x() - r*numpy.cos(self.phi)
         y1 = self.p0.y() + r*numpy.sin(self.phi)
         y2 = self.p0.y() - r*numpy.sin(self.phi)
-        plt.plot([x1, x2], [y1, y2], 'k-', lw=2, color=self.p0.color)
+        plt.plot([x1, x2], [y1, y2], 'k-', **kwargs)

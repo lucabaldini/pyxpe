@@ -111,7 +111,7 @@ class xpeHexagonCollection(collections.RegularPolyCollection):
     """Specialized collections.RegularPolyCollection with `numsides` set to 6.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, padding=0.1, **kwargs):
         """Constructor.
         """
         offsets = kwargs.get('offsets')
@@ -121,7 +121,6 @@ class xpeHexagonCollection(collections.RegularPolyCollection):
         xmax = x.max()
         ymin = y.min()
         ymax = y.max()
-        padding = kwargs.get('padding', 0.1)
         dx = padding*(xmax - xmin)
         dy = padding*(ymax - ymin)
         xmin -= dx
@@ -247,7 +246,7 @@ class xpeHexagonalMatrix():
         def _vtxt(x, y, s, **kwargs):
             """
             """
-            return plt.text(x - 0.03, y, '%s' % s, horizontalalignment='right',
+            return plt.text(x - 0.06, y, '%s' % s, horizontalalignment='right',
                             verticalalignment='center', **kwargs)  
 
         x1, y1 = self.__pixel_positions[0]

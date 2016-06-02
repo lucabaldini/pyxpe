@@ -53,7 +53,13 @@ def mean_variance(file_path, num_events):
         mean[indices] += delta/n[indices]
         M2[indices] += delta*(event.adc_values - mean[indices])
     rms = numpy.sqrt(M2/(n - 1))
-    plt.matshow(rms)
+
+    fig, axes = plt.subplots(nrows=1, ncols=2)
+    img0 = axes[0].matshow(mean)
+    img1 = axes[1].matshow(rms)
+    #plt.axis([41, 61, 39, 63])
+    #cax = fig.add_axes([0.9, 0.1, 0.03, 0.8])
+    #fig.colorbar(img, cax=cax)
     plt.show()
     
 

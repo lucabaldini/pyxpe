@@ -137,7 +137,7 @@ class xpeCluster:
             return 
         _x = numpy.sum(self.x[_mask]*_adc)/_adc_sum
         _y = numpy.sum(self.y[_mask]*_adc)/_adc_sum
-        self.conversion_point = xpePoint2d(_x, _y, color='red')
+        self.conversion_point = xpePoint2d(_x, _y)
         # And now we can assign a direction to the original axis, based on the
         # sign of the third moment. (Note that we could have done this right
         # at the beginning, but that would have changed the logic of the
@@ -154,7 +154,7 @@ class xpeCluster:
         _adc_sum = float(numpy.sum(self.adc_values*w))
         _x = numpy.sum(self.x*self.adc_values*w)/_adc_sum
         _y = numpy.sum(self.y*self.adc_values*w)/_adc_sum
-        self.conversion_baricenter = xpePoint2d(_x, _y, color='green')
+        self.conversion_baricenter = xpePoint2d(_x, _y)
         phi, mom2_long,\
             mom2_trans = self.do_moments_analysis(self.conversion_baricenter, w)
         self.phi1 = phi
@@ -187,7 +187,8 @@ class xpeCluster:
         _y = s(_x)
         plt.plot(_x, _y, '-', lw=2, color='black')
 
-    def draw(self, coordinate_system, color_map='Reds', text=True, show=True):
+    def draw(self, coordinate_system, color_map='Reds', hexcol_padding=0.1,
+             text=True, show=True):
         """Draw the cluster.
         """
         hit_positions = numpy.vstack((self.x, self.y),).transpose()
@@ -196,7 +197,8 @@ class xpeCluster:
             angle = numpy.pi/2.
         else:
             angle = 0
-        hex_col = xpeHexagonCollection(offsets=hit_positions, rotation=angle,
+        hex_col = xpeHexagonCollection(padding=hexcol_padding,
+                                       offsets=hit_positions, rotation=angle,
                                        edgecolors='gray', facecolors=colors)
         fig = hex_col.figure
         if text:
@@ -210,14 +212,15 @@ class xpeCluster:
                          verticalalignment='center', size=8, color=col)
         plt.xlabel('x [mm]')
         plt.ylabel('y [mm]')
-        self.baricenter.draw()
-        self.axis0.draw()
-        self.conversion_point.draw()
-        self.conversion_baricenter.draw()
-        self.axis1.draw()
+        #self.baricenter.draw()
+        #self.axis0.draw()
+        #self.conversion_point.draw()
+        #self.conversion_baricenter.draw()
+        #self.axis1.draw()
         #self.fit_spline()
         if show:
             plt.show()
+        return fig
 
     def __str__(self):
         """String formatting.
