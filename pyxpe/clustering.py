@@ -160,7 +160,7 @@ class xpeCluster:
         self.phi1 = phi
         if abs(self.phi1 - self.phi0) > 0.5*numpy.pi:
             self.phi1 -= numpy.pi*numpy.sign(self.phi1)
-        self.axis1 = xpeRay2d(self.conversion_baricenter, phi)
+        self.axis1 = xpeRay2d(self.conversion_point, self.phi1)
 
     def projection1d(self, pivot, phi):
         """Project the charge distribution on the ray passing by the pivot

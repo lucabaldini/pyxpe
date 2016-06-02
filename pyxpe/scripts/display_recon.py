@@ -108,11 +108,20 @@ def display_recon(event, zero_suppression=9, coordinate_system='pixy'):
     w2 = Wedge(cluster.baricenter, r2, _phi1, _phi2, facecolor='none',
                edgecolor=_color, lw=_lw, hatch='///')
     plt.gca().add_artist(w2)
-    cluster.conversion_point.draw()
+    cluster.conversion_point.draw(color='green')
     annotate('Conversion point', cluster.conversion_point, (0.1, 0.1))
 
     dir2_fig = cluster.draw(coordinate_system, hexcol_padding=0.1, show=False)
-    
+    cluster.baricenter.draw(color=_color)
+    annotate('Baricenter', cluster.baricenter, (0.85, 0.2))
+    cluster.axis0.draw(color=_color, lw=_lw, ls='dashed')
+    p = cluster.axis0.at(-0.4)
+    annotate('Principal axis', p, (0.1, 0.9))
+    cluster.conversion_point.draw(color='green')
+    annotate('Conversion point', cluster.conversion_point, (0.1, 0.1))
+    cluster.axis1.draw(color='green', lw=_lw, ls='solid')
+    p = cluster.axis1.at(0.5)
+    annotate('Final direction', p, (0.8, 0.85))
     
     plt.show()
 
