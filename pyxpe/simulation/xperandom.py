@@ -59,7 +59,10 @@ class xperandom:
         """
         return self.engine.setstate(state)
     
-
+    def exp(self, l):
+        """
+        """
+        return self.engine.expovariate(l)
         
 if __name__ == '__main__':
      r = xperandom()
