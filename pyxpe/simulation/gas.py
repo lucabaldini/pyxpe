@@ -477,10 +477,11 @@ if __name__ == '__main__':
     #plt.plot(xnew, g.GetEfficiency(xnew, 10), '.', label='eff10')
     #plt.plot(xnew, g.GetEfficiency(xnew, 100), '.', label='eff100')
     
-    plt.xlabel('E (keV)')
-    plt.xscale('log')
-    plt.yscale('log')
-    plt.legend()
+    #plt.xlabel('E (keV)')
+    #plt.xscale('log')
+    #plt.yscale('log')
+    #plt.legend()
+    #
     plt.show()
         
     el = []
@@ -492,20 +493,23 @@ if __name__ == '__main__':
                 el[-1].GetRutherfordTotalCrossSection(energy),\
                 el[-1].GetMottTotalCrossSection(energy),\
                 el[-1].GetElasticMeanFreePath(energy, 1, "mott")
+        
+        plt.plot(xnew, el[-1].GetPhotoelectricCrossSection(xnew), '.',\
+                 label = "%s"%ename)
         """
-        ##plt.plot(xnew, el[-1].GetPhotoelectricCrossSection(xnew), '.',\
-        ##         label = "Photo")
         plt.plot(xnew, el[-1].GetRutherfordTotalCrossSection(xnew), '.',\
                  label = "Ruth")
         plt.plot(xnew, el[-1].GetMottTotalCrossSection(xnew), '.',\
                  label = "Mott")
-        plt.ylabel(ename)
-        plt.xlabel('E (keV)')
-        plt.xscale('log')
-        plt.yscale('log')
-        plt.legend()
-        plt.show()
         """
+    #plt.ylabel(ename)
+    plt.ylabel('Photoelectrinc x-section')
+    plt.xlabel('E (keV)')
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.legend()
+    plt.show()
+        
         
 
     """
