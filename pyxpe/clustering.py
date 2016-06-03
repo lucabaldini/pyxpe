@@ -78,6 +78,7 @@ class xpeCluster:
             are multiplied by the pixel ADC counts).
         """
         w = self.adc_values*weights
+        wsum = numpy.sum(w)
         # Calculate the offsets with respect to the pivot.
         dx = (self.x - pivot.x())
         dy = (self.y - pivot.y())
@@ -91,8 +92,8 @@ class xpeCluster:
         # of inertia.
         xp = numpy.cos(phi)*dx + numpy.sin(phi)*dy
         yp = -numpy.sin(phi)*dx + numpy.cos(phi)*dy
-        mom2_long = numpy.sum((xp**2.)*w)/self.pulse_height
-        mom2_trans = numpy.sum((yp**2.)*w)/self.pulse_height
+        mom2_long = numpy.sum((xp**2.)*w)/wsum
+        mom2_trans = numpy.sum((yp**2.)*w)/wsum
         # We want mom2_long to be the highest eigenvalue, so we need to
         # check wheteher we have to swap the eigenvalues, here. Note that
         # at this point phi is still comprised between -pi/2 and pi/2.
