@@ -55,7 +55,7 @@ def display_recon(event, zero_suppression=9, coordinate_system='pixy'):
     plt.savefig('sample_evt_raw.pdf')
 
     cluster_fig = cluster.draw(coordinate_system, show=False)
-    plt.savefig('sample_evt_cluser.pdf')
+    plt.savefig('sample_evt_cluster.pdf')
 
     mom_fig = cluster.draw(coordinate_system, hexcol_padding=0.1, show=False)
     _color = 'blue'
