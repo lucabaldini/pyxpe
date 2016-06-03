@@ -25,9 +25,7 @@ import xperandom
 import os
 import numpy as np
 from scipy.interpolate import interp1d
-import logging
-logging.basicConfig(format='%(module)s:%(levelname)s:%(message)s',\
-                    level=logging.INFO)
+from pyxpe.logging_ import logger 
 
 MIX_FILE_NAME   = 'gasproperties/MIXTURES.DAT'
 COMP_FILE_NAME  = 'gasproperties/COMPOUNDS.DAT'
@@ -46,7 +44,7 @@ class gasmix:
     def __init__(self, mixid, pressure, mix_file_name = MIX_FILE_NAME):
         self.mixid    = mixid
         self.pressure = pressure
-        logging.info("Mix Id = %d Pressure %s (atm)" % (mixid, pressure))
+        logger.info("Mix Id = %d Pressure %s (atm)" % (mixid, pressure))
         self.parse_mix_file(mix_file_name)
         self.eval_properties()
         
@@ -62,10 +60,10 @@ class gasmix:
             self.comp_list.append(compound(mix_line[2], float(mix_line[3])))
         if mix_line[4] != '-':
             self.comp_list.append(compound(mix_line[4], float(mix_line[5])))
-        logging.info("Mix of %d gas, Diffusion Sigma %.3f um (for 1 cm drift)"%\
+        logger.info("Mix of %d gas, Diffusion Sigma %.3f um (for 1 cm drift)"%\
                      (len(self.comp_list),self.diffusion_sigma))
         for comp in self.comp_list:
-            logging.info(str(comp))
+            logger.info(str(comp))
 
     def eval_properties(self):
         """
@@ -77,7 +75,7 @@ class gasmix:
             TotalSecondary += comp.getfraction()*comp.get_ionsnumber()
         # ionization
         self.WIonization = TotalStopPower/TotalSecondary;
-        logging.info("W ionization %f" %self.WIonization)
+        logger.info("W ionization %f" %self.WIonization)
 
         # create list of elements
         self.Density   = 0.0;
@@ -101,9 +99,9 @@ class gasmix:
                     elementID = self.elements_names.index(ElemName)
                     self.elements_list[elementID].Density += mydensity
                     
-        logging.info("Density of the mixture= %.8f g/cm^3" % self.Density)
+        logger.info("Density of the mixture= %.8f g/cm^3" % self.Density)
         for elem in self.elements_list:
-            logging.info(str(elem))
+            logger.info(str(elem))
 
     def GetElectronRange(self, energy):
         """\brief Returns the electron range as a function of the energy.
@@ -153,7 +151,7 @@ class gasmix:
                 return elem
             partial_probability += absorption_prob
         # this should never happen!
-        logging.error("Converting element not extracted!!!")
+        logger.error("Converting element not extracted!!!")
         return None
 
         
@@ -164,7 +162,7 @@ class gasmix:
         Energy to be provided in keV, mode cam be either RUTHERFORD or MOTT.
         """
         if mode.lower() != "rutherford" and mode.lower() != "mott":
-            logging.error("Mode can be only rutherford or mott, not %s" %\
+            logger.error("Mode can be only rutherford or mott, not %s" %\
                           mode)
             return -1
         MeanFreePath = 0.
@@ -191,7 +189,7 @@ class gasmix:
                 return elem
             partial_probability += scat_prob
         # this should never happen!
-        logging.error("Scattering element not extracted!!!")
+        logger.error("Scattering element not extracted!!!")
         return None
         
     def GetStoppingPower(self, energy):
@@ -222,7 +220,7 @@ class element:
                 self.FluorescenceYield =  float(l[4])
                 break
         if self.ChemicalSymbol == None:
-            logging.error("No element %s found, please update file %s" %\
+            logger.error("No element %s found, please update file %s" %\
                           (name, ele_file_name))
 
         # The Density is re-calculated in gasmix:eval_properties
@@ -282,7 +280,7 @@ class element:
         if isinstance( energy , (int, float) ):
             energy = np.array([energy])
         if energy.any()< MIN_ANALYTIC_CROSS_SECTIONS_ENERGY:
-            logging.error("Cannot eval screening factor below %f keV"%\
+            logger.error("Cannot eval screening factor below %f keV"%\
                           MIN_ANALYTIC_CROSS_SECTIONS_ENERGY)
             return -1
         return (3.4E-3)*np.power(self.AtomicNumber, 0.67)/energy
@@ -297,7 +295,7 @@ class element:
         if isinstance( energy , (int, float) ):
             energy = np.array([energy])
         if energy.any()< MIN_ANALYTIC_CROSS_SECTIONS_ENERGY:
-            logging.error("Cannot eval Rutherford X section below %f keV"%\
+            logger.error("Cannot eval Rutherford X section below %f keV"%\
                           MIN_ANALYTIC_CROSS_SECTIONS_ENERGY)
             return -1
         
@@ -318,7 +316,7 @@ class element:
         if isinstance( energy , (int, float) ):
             energy = np.array([energy])
         if energy.any()< MIN_ANALYTIC_CROSS_SECTIONS_ENERGY:
-            logging.error("Cannot eval Mott X section below %f keV"%\
+            logger.error("Cannot eval Mott X section below %f keV"%\
                           MIN_ANALYTIC_CROSS_SECTIONS_ENERGY)
             return -1
         
@@ -335,7 +333,7 @@ class element:
         if isinstance( energy , (int, float) ):
             energy = np.array([energy])
         if energy.any()< MIN_ANALYTIC_CROSS_SECTIONS_ENERGY:
-            logging.error("Cannot eval ElasticMeanFreePath below %f keV"%\
+            logger.error("Cannot eval ElasticMeanFreePath below %f keV"%\
                           MIN_ANALYTIC_CROSS_SECTIONS_ENERGY)
             return -1
 
@@ -347,7 +345,7 @@ class element:
             MeanFreePath /= self.GetMottTotalCrossSection(energy);
             return MeanFreePath;
         else:
-            logging.error("Mode can be only rutherford or mott, not %s" %\
+            logger.error("Mode can be only rutherford or mott, not %s" %\
                           mode)
             return -1
         
@@ -359,7 +357,7 @@ class element:
         if isinstance( energy , (int, float) ):
             energy = np.array([energy])
         if energy.any()< MIN_ANALYTIC_CROSS_SECTIONS_ENERGY:
-            logging.error("Cannot eval Scattering Angle below %f keV"%\
+            logger.error("Cannot eval Scattering Angle below %f keV"%\
                           MIN_ANALYTIC_CROSS_SECTIONS_ENERGY)
             return -1
         screening_factor = GetRutherfordScreeningFactor(energy)
@@ -371,7 +369,7 @@ class element:
             CorrectionFactor = 2.2 - ((92.0 - self.AtomicNumber)/92.0);
             return np.acos(1.-(2.*screening_factor*np.power((r0), CorrectionFactor))/(1.+screening_factor-r1))
         else:
-            logging.error("Mode can be only rutherford or mott, not %s" %\
+            logger.error("Mode can be only rutherford or mott, not %s" %\
                           mode)
             return -1
         
@@ -384,7 +382,7 @@ class element:
         if isinstance( energy , (int, float) ):
             energy = np.array([energy])
         if energy.any()< MIN_ANALYTIC_CROSS_SECTIONS_ENERGY:
-            logging.error("Cannot eval StoppingPower below %f keV"%\
+            logger.error("Cannot eval StoppingPower below %f keV"%\
                           MIN_ANALYTIC_CROSS_SECTIONS_ENERGY)
             return -1
         stop_pwr = 78500*self.AtomicNumber*np.log(1.166*(energy + 0.85*self.MeanIonizationPotential)/self.MeanIonizationPotential)/(energy*self.AtomicWeight)*self.Density
@@ -414,7 +412,7 @@ class compound:
                     self.elements.append(l[i])
                     self.atoms.append(int(l[i+1]))
         if self.n_elements == 0:
-            logging.error("No compound %s found, please update file %s" %\
+            logger.error("No compound %s found, please update file %s" %\
                           (self.name, comp_file_name))
 
     def getname(self):

@@ -24,9 +24,8 @@
 import xperandom
 from math import sqrt
 from gas import gasmix
-import logging
-logging.basicConfig(format='%(module)s:%(levelname)s:%(message)s',\
-                    level=logging.INFO)
+from pyxpe.logging_ import logger 
+
 
 class experiment:
     """Experiment object
