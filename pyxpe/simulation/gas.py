@@ -27,10 +27,14 @@ import numpy as np
 from scipy.interpolate import interp1d
 from pyxpe.logging_ import logger 
 
-MIX_FILE_NAME   = 'gasproperties/MIXTURES.DAT'
-COMP_FILE_NAME  = 'gasproperties/COMPOUNDS.DAT'
-ELE_FILE_NAME   = 'gasproperties/ELEMENTS.DAT'
-XSEC_FILE_NAME  = 'gasproperties/xsections/'
+# get dir name of this module
+import pyxpe.simulation
+THIS_MODULE_DIR = os.path.dirname(pyxpe.simulation.__file__)
+
+MIX_FILE_NAME   = os.path.join(THIS_MODULE_DIR,'gasproperties/MIXTURES.DAT')
+COMP_FILE_NAME  = os.path.join(THIS_MODULE_DIR,'gasproperties/COMPOUNDS.DAT')
+ELE_FILE_NAME   = os.path.join(THIS_MODULE_DIR,'gasproperties/ELEMENTS.DAT')
+XSEC_FILE_NAME  = os.path.join(THIS_MODULE_DIR,'gasproperties/xsections/')
 
 MOLAR_VOLUME    = 22414.0
 AVOGADRO_NUMBER = 6.02e23
@@ -459,6 +463,7 @@ class compound:
     
 
 if __name__ == '__main__':
+    
     print "------------------------"
     g0 = gasmix(26, 0.8)
     print "------------------------"

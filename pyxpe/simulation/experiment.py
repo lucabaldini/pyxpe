@@ -23,7 +23,7 @@
 
 import xperandom
 from math import sqrt
-from gas import gasmix
+from pyxpe.simulation.gas import gasmix
 from pyxpe.logging_ import logger 
 
 
