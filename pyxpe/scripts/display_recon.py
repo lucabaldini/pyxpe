@@ -41,7 +41,6 @@ def annotate(text, pos, text_pos, text_size=15, color='gray',
                 textcoords='figure fraction', size=text_size, va='center',
                 ha='center', color=color, bbox=_bbox,
                 arrowprops=_arrowprops)
-    
 
 def display_recon(event, zero_suppression=9, coordinate_system='pixy'):
     """
@@ -134,10 +133,9 @@ def display_recon(event, zero_suppression=9, coordinate_system='pixy'):
     plt.savefig('sample_evt_phi2.pdf')
 
     plt.show()
-
+    
 
 if __name__ == '__main__':
     file_path = '/data/work/xpe/xpedaq/data/test_fe_500evts.mdat'
     event = xpeBinaryFileWindowed(file_path).next()
     display_recon(event)
-
