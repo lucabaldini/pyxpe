@@ -41,7 +41,6 @@ def annotate(text, pos, text_pos, text_size=15, color='gray',
                 textcoords='figure fraction', size=text_size, va='center',
                 ha='center', color=color, bbox=_bbox,
                 arrowprops=_arrowprops)
-    
 
 def display_recon(event, zero_suppression=9, coordinate_system='pixy'):
     """
@@ -64,11 +63,15 @@ def display_recon(event, zero_suppression=9, coordinate_system='pixy'):
     annotate('Baricenter', cluster.baricenter, (0.8, 0.85))
     cluster.axis0.draw(color=_color, lw=_lw, ls='dashed')
     p = cluster.axis0.at(-0.4)
-    annotate('Principal axis', p, (0.1, 0.9))
+    annotate('Principal axis', p, (0.15, 0.9))
     major_axis = xpeRay2d(cluster.baricenter, cluster.phi0)
     major_axis.draw(r=numpy.sqrt(cluster.mom2_long), color=_color, lw=_lw)
+    p = major_axis.at(-0.5*numpy.sqrt(cluster.mom2_long))
+    annotate('$\\sqrt{M_2^{\\rm long}}$', p, (0.3, 0.8))
     minor_axis = xpeRay2d(cluster.baricenter, cluster.phi0 + 0.5*numpy.pi)
     minor_axis.draw(r=numpy.sqrt(cluster.mom2_trans), color=_color, lw=_lw)
+    p = minor_axis.at(-0.5*numpy.sqrt(cluster.mom2_trans))
+    annotate('$\\sqrt{M_2^{\\rm trans}}$', p, (0.7, 0.2))
     e = Ellipse(xy=cluster.baricenter, width=2*numpy.sqrt(cluster.mom2_long),
                 height=2*numpy.sqrt(cluster.mom2_trans),
                 angle=numpy.degrees(cluster.phi0), facecolor='none',
@@ -77,7 +80,7 @@ def display_recon(event, zero_suppression=9, coordinate_system='pixy'):
     p = minor_axis.at(-numpy.sqrt(cluster.mom2_trans))
     annotate('Ellipsoid of inertia', p, (0.5, 0.1))
     plt.savefig('sample_evt_mom_analysis.pdf')
-
+    
     mom3_fig = plt.figure(facecolor='w')
     ax = plt.subplot(111)
     x = cluster.projection1d(cluster.baricenter, cluster.phi0)
@@ -86,9 +89,9 @@ def display_recon(event, zero_suppression=9, coordinate_system='pixy'):
     plt.ylabel('Pulse height [ADC counts]')
     x3 = numpy.sign(cluster.mom3_long)*abs(cluster.mom3_long)**(1./3.)
     annotate('Baricenter', (0., 0.), (0.65, 0.8))
-    annotate('$\sqrt[3]{M_3}$', (x3, 0.), (-0.75, 0.5))
+    annotate('$\sqrt[3]{M_3}$', (x3, 0.), (0.25, 0.5))
     plt.savefig('sample_evt_mom3.pdf')
-
+    
     conv_fig = cluster.draw(coordinate_system, hexcol_padding=0.75, show=False)
     _color = 'blue'
     _lw = 1.5
@@ -96,7 +99,7 @@ def display_recon(event, zero_suppression=9, coordinate_system='pixy'):
     annotate('Baricenter', cluster.baricenter, (0.8, 0.85))
     cluster.axis0.draw(color=_color, lw=_lw, ls='dashed')
     p = cluster.axis0.at(-0.8)
-    annotate('Principal axis', p, (-0.9, 0.9))
+    annotate('Principal axis', p, (0.2, 0.9))
     minor_axis = xpeRay2d(cluster.baricenter, cluster.phi0 + 0.5*numpy.pi)
     minor_axis.draw(color=_color, lw=_lw)
     r1 = 1.5*numpy.sqrt(cluster.mom2_long)
@@ -113,27 +116,26 @@ def display_recon(event, zero_suppression=9, coordinate_system='pixy'):
                edgecolor=_color, lw=_lw, hatch='///')
     plt.gca().add_artist(w2)
     cluster.conversion_point.draw(color='green')
-    annotate('Conversion point', cluster.conversion_point, (0.1, 0.1))
-    plt.savefig('sample_evt_conv_poin.pdf')
+    annotate('Conversion point', cluster.conversion_point, (0.2, 0.1))
+    plt.savefig('sample_evt_conv_point.pdf')
 
     dir2_fig = cluster.draw(coordinate_system, hexcol_padding=0.1, show=False)
     cluster.baricenter.draw(color=_color)
     annotate('Baricenter', cluster.baricenter, (0.85, 0.2))
     cluster.axis0.draw(color=_color, lw=_lw, ls='dashed')
     p = cluster.axis0.at(-0.4)
-    annotate('Principal axis', p, (0.1, 0.9))
+    annotate('Principal axis', p, (0.2, 0.9))
     cluster.conversion_point.draw(color='green')
-    annotate('Conversion point', cluster.conversion_point, (0.1, 0.1))
+    annotate('Conversion point', cluster.conversion_point, (0.2, 0.1))
     cluster.axis1.draw(color='green', lw=_lw, ls='solid')
     p = cluster.axis1.at(0.5)
     annotate('Final direction', p, (0.8, 0.85))
     plt.savefig('sample_evt_phi2.pdf')
-    
-    plt.show()
 
+    plt.show()
+    
 
 if __name__ == '__main__':
     file_path = '/data/work/xpe/xpedaq/data/test_fe_500evts.mdat'
     event = xpeBinaryFileWindowed(file_path).next()
     display_recon(event)
-
