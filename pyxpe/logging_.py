@@ -35,7 +35,7 @@ logger.setLevel(logging.DEBUG)
 """
 consoleHandler = logging.StreamHandler()
 consoleHandler.setLevel(logging.DEBUG)
-consoleFormatter = logging.Formatter(">>> %(message)s")
+consoleFormatter = logging.Formatter("%(module)s:%(levelname)s >> %(message)s")
 consoleHandler.setFormatter(consoleFormatter)
 logger.addHandler(consoleHandler)
 
