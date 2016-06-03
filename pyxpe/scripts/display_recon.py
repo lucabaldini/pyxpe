@@ -52,8 +52,10 @@ def display_recon(event, zero_suppression=9, coordinate_system='pixy'):
     logger.info(cluster)
 
     event_fig = event.draw(show=False)
+    plt.savefig('sample_evt_raw.pdf')
 
     cluster_fig = cluster.draw(coordinate_system, show=False)
+    plt.savefig('sample_evt_cluser.pdf')
 
     mom_fig = cluster.draw(coordinate_system, hexcol_padding=0.1, show=False)
     _color = 'blue'
@@ -74,6 +76,7 @@ def display_recon(event, zero_suppression=9, coordinate_system='pixy'):
     plt.gca().add_artist(e)
     p = minor_axis.at(-numpy.sqrt(cluster.mom2_trans))
     annotate('Ellipsoid of inertia', p, (0.5, 0.1))
+    plt.savefig('sample_evt_mom_analysis.pdf')
 
     mom3_fig = plt.figure(facecolor='w')
     ax = plt.subplot(111)
@@ -84,6 +87,7 @@ def display_recon(event, zero_suppression=9, coordinate_system='pixy'):
     x3 = numpy.sign(cluster.mom3_long)*abs(cluster.mom3_long)**(1./3.)
     annotate('Baricenter', (0., 0.), (0.65, 0.8))
     annotate('$\sqrt[3]{M_3}$', (x3, 0.), (-0.75, 0.5))
+    plt.savefig('sample_evt_mom3.pdf')
 
     conv_fig = cluster.draw(coordinate_system, hexcol_padding=0.75, show=False)
     _color = 'blue'
@@ -110,6 +114,7 @@ def display_recon(event, zero_suppression=9, coordinate_system='pixy'):
     plt.gca().add_artist(w2)
     cluster.conversion_point.draw(color='green')
     annotate('Conversion point', cluster.conversion_point, (0.1, 0.1))
+    plt.savefig('sample_evt_conv_poin.pdf')
 
     dir2_fig = cluster.draw(coordinate_system, hexcol_padding=0.1, show=False)
     cluster.baricenter.draw(color=_color)
@@ -122,6 +127,7 @@ def display_recon(event, zero_suppression=9, coordinate_system='pixy'):
     cluster.axis1.draw(color='green', lw=_lw, ls='solid')
     p = cluster.axis1.at(0.5)
     annotate('Final direction', p, (0.8, 0.85))
+    plt.savefig('sample_evt_phi2.pdf')
     
     plt.show()
 
