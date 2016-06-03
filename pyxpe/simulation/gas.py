@@ -36,7 +36,8 @@ COMP_FILE_NAME  = os.path.join(THIS_MODULE_DIR,'gasproperties/COMPOUNDS.DAT')
 ELE_FILE_NAME   = os.path.join(THIS_MODULE_DIR,'gasproperties/ELEMENTS.DAT')
 XSEC_FILE_NAME  = os.path.join(THIS_MODULE_DIR,'gasproperties/xsections/')
 
-MOLAR_VOLUME    = 22414.0
+#0.082057338[L atm K-1 mol-1]*(273.15 + 25)[K]/1[atm] https://en.wikipedia.org/wiki/Molar_volume
+MOLAR_VOLUME    = 24465.395 # at 25 C and 1 atm in cm #used to be 22414. valid at 0C
 AVOGADRO_NUMBER = 6.02e23
 MIN_PHOTOELECTRIC_DATA_ENERGY      = 1.0
 MAX_PHOTOELECTRIC_DATA_ENERGY      = 1000.0
@@ -139,18 +140,17 @@ class gasmix:
         # notice that GetAbsorptionLength out is in cm
         return (1 -np.exp(-0.1*gap_tickness/self.GetAbsorptionLength(energy)))
     
-    def GetConvertingElement(self, energy, rnd):
+    def GetConvertingElement(self, energy, r0):
         """ \brief EXTRACT the element converting an incoming photon.
         The element in the mixture is extracted according to 
         the relative values of the photoelectric cross sections 
         at a given energy.
         Energy to be provided in keV.
         """
-        r0 = rnd.random()
         total_x_sect = self.GetPhotoelectricCrossSection(energy)*self.Density
         partial_probability = 0
         for elem in self.elements_list:
-            absorption_prob = elem.GetPhotoelectricCrossSection(elergy)*elem.Density/total_x_sect
+            absorption_prob = elem.GetPhotoelectricCrossSection(energy)*elem.Density/total_x_sect
             if (r0 < partial_probability+absorption_prob):
                 return elem
             partial_probability += absorption_prob
