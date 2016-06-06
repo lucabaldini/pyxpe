@@ -66,6 +66,8 @@ def run_pixy(file_path, num_events=1000000000, zero_suppression=9,
         }
         output_tree.fill(_data)
         event_id += 1
+        if event_id == num_events:
+            break
     output_tree.Write()
     output_file.Close()
     logger.info('Done, bye!')
