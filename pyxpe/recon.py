@@ -28,7 +28,8 @@ from pyxpe.logging_ import logger
 
 
 def run_pixy(file_path, num_events=1000000000, zero_suppression=9,
-             coordinate_system='xpedaq', output_path=None):
+             coordinate_system='xpedaq', output_path=None,
+             min_cluster_size=6, max_cluster_size=400):
     """Run the event reconstruction on a binary file.
     """
     assert(file_path.endswith('.mdat'))
@@ -42,34 +43,38 @@ def run_pixy(file_path, num_events=1000000000, zero_suppression=9,
         cluster_list = hierarchical_clustering(event, zero_suppression,
                                                coordinate_system)
         cluster = cluster_list[0]
-        _data = {
-            'fRunId': -1,
-            'fEventId': event_id, 
-            'fNClusters': len(cluster_list), 
-            'fTrigWindow': event.num_pixels(), 
-            'fTimeTick': -1, 
-            'fTimeStamp': -1, 
-            'fBufferId': event.buffer_id, 
-            'fCluSize': cluster.num_pixels(),
-            'fPHeight': cluster.pulse_height,
-            'fStoN': -1,
-            'fTotNoise': -1,
-            'fBaricenterX': cluster.baricenter.x(),
-            'fBaricenterY': cluster.baricenter.y(),
-            'fTheta0': cluster.phi0,
-            'fTheta1': cluster.phi1,
-            'fMomX': cluster.mom2_long,
-            'fMomY': cluster.mom2_trans,
-            'fMomThirdX': cluster.mom3_long,
-            'fImpactX': cluster.conversion_point.x(),
-            'fImpactY': cluster.conversion_point.y()
-        }
-        output_tree.fill(_data)
+        if cluster.num_pixels() >= min_cluster_size and\
+           cluster.num_pixels() < max_cluster_size:
+            _data = {
+                'fRunId': -1,
+                'fEventId': event_id, 
+                'fNClusters': len(cluster_list), 
+                'fTrigWindow': event.num_pixels(), 
+                'fTimeTick': -1, 
+                'fTimeStamp': -1, 
+                'fBufferId': event.buffer_id, 
+                'fCluSize': cluster.num_pixels(),
+                'fPHeight': cluster.pulse_height,
+                'fStoN': -1,
+                'fTotNoise': -1,
+                'fBaricenterX': cluster.baricenter.x(),
+                'fBaricenterY': cluster.baricenter.y(),
+                'fTheta0': cluster.phi0,
+                'fTheta1': cluster.phi1,
+                'fMomX': cluster.mom2_long,
+                'fMomY': cluster.mom2_trans,
+                'fMomThirdX': cluster.mom3_long,
+                'fImpactX': cluster.conversion_point.x(),
+                'fImpactY': cluster.conversion_point.y()
+            }
+            output_tree.fill(_data)
         event_id += 1
         if event_id == num_events:
             break
+    num_proc_events = output_tree.GetEntries()
     output_tree.Write()
     output_file.Close()
-    logger.info('Done, bye!')
+    logger.info('Done, %d event(s) written to the output file.' %\
+                num_proc_events)
     return output_path
         
