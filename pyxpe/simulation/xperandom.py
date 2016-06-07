@@ -26,6 +26,59 @@
 # https://docs.python.org/2.7/library/random.html
 import random
 
+import numpy
+from scipy.interpolate import InterpolatedUnivariateSpline
+import matplotlib.pyplot as plt
+
+
+class xpeUnivariateGenerator(InterpolatedUnivariateSpline):
+
+    """
+    """
+
+    def __init__(self, rv, pdf, w=None, bbox=[None, None], k=1):
+        """Constructor.
+        """
+        self.__rv = rv
+        self.__pdf = pdf
+        InterpolatedUnivariateSpline.__init__(self, rv, pdf, w, bbox, k)
+        self.ppf = self.build_ppf()
+
+    def norm(self):
+        """Return the integral over the entire spline domain.
+        """
+        return self.integral(self.__rv[0], self.__rv[-1])
+
+    def build_ppf(self):
+        """Create the percent point function (or inverse of the cdf).
+        """
+        _y = self.__rv
+        _xmin = self.__rv[0]
+        _x = numpy.array([self.integral(_xmin, _xp) for _xp in _y])
+        _x, _mask = numpy.unique(_x, return_index=True)
+        _x/= self.norm()
+        _y = _y[_mask]
+        return InterpolatedUnivariateSpline(_x, _y)
+    
+    def pdf(self, rv):
+        """Return the pdf value(s) at the point(s) rv.
+        """
+        return self(rv)
+
+    def rvs(self, size=1):
+        """Return random variates of arbitrary size.
+        """
+        return self.ppf(numpy.random.sample(size))
+
+    def plot(self, show=True):
+        """
+        """
+        plt.plot(self.__rv, self.__pdf)
+        if show:
+            plt.show()
+        
+
+
 class xperandom:
     """Wrapper random class
     """
@@ -63,21 +116,41 @@ class xperandom:
         """
         """
         return self.engine.expovariate(l)
-        
-if __name__ == '__main__':
-     r = xperandom()
-     
-     r.get_engine().seed(2)
-     print("Direct engine call:", \
-         r.get_engine().random(), \
-         r.get_engine().random())
-     
-     r.set_seed(2)
-     print("Wrapped call:", r.random(), r.random())
 
-     currentstate = r.get_state()
-     #print ("Get state", currentstate)
-     print("NextRandom", r.random())
-     r.set_state(currentstate)
-     print("PrevRandom", r.random())
+
+
+def test_random():
+    """
+    """
+    r = xperandom()
      
+    r.get_engine().seed(2)
+    print("Direct engine call:", \
+          r.get_engine().random(), \
+          r.get_engine().random())
+    
+    r.set_seed(2)
+    print("Wrapped call:", r.random(), r.random())
+    
+    currentstate = r.get_state()
+    #print ("Get state", currentstate)
+    print("NextRandom", r.random())
+    r.set_state(currentstate)
+    print("PrevRandom", r.random())
+
+def test_univariate(num_events=100000, num_bins=100):
+    """
+    """
+    rv = numpy.linspace(0, 2*numpy.pi, 100)
+    pdf = numpy.cos(rv)**2/numpy.pi
+    generator = xpeUnivariateGenerator(rv, pdf)
+    values = generator.rvs(num_events)
+    h = plt.hist(values, bins=num_bins)
+    bin_width = numpy.pi*2/num_bins
+    plt.plot(rv, pdf*num_events*bin_width)
+    plt.show()
+
+    
+if __name__ == '__main__':
+    test_univariate()
+    
