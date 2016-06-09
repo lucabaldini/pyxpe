@@ -26,7 +26,7 @@
 # https://docs.python.org/2.7/library/random.html
 import random
 
-import numpy
+import numpy as np 
 from scipy.interpolate import InterpolatedUnivariateSpline
 import matplotlib.pyplot as plt
 
@@ -54,8 +54,8 @@ class xpeUnivariateGenerator(InterpolatedUnivariateSpline):
         """
         _y = self.__rv
         _xmin = self.__rv[0]
-        _x = numpy.array([self.integral(_xmin, _xp) for _xp in _y])
-        _x, _mask = numpy.unique(_x, return_index=True)
+        _x = np.array([self.integral(_xmin, _xp) for _xp in _y])
+        _x, _mask = np.unique(_x, return_index=True)
         _x/= self.norm()
         _y = _y[_mask]
         return InterpolatedUnivariateSpline(_x, _y)
@@ -68,7 +68,7 @@ class xpeUnivariateGenerator(InterpolatedUnivariateSpline):
     def rvs(self, size=1):
         """Return random variates of arbitrary size.
         """
-        return self.ppf(numpy.random.sample(size))
+        return self.ppf(np.random.sample(size))
 
     def plot(self, show=True):
         """
@@ -117,8 +117,40 @@ class xperandom:
         """
         return self.engine.expovariate(l)
 
+    def photoelectron_theta(self, beta, nevt = 1):
+        """ Get photoelectron theta
+        """
+        return self.__photoelectron_theta_1(beta, nevt)
+    
+    def photoelectron_phi(self, pol_angle, pol_level, nevt = 1):
+        """ Get photoelectron phi for beam polarized at level 
+        pol_level (from 0 to 1) and angle pol_angle (deg)
+        """
+        return self.__photoelectron_phi_1(pol_angle, pol_level, nevt)
+    
+    def __photoelectron_theta_1(self, beta, nevt = 1):
+        """ Get photoelectron theta - spline 1d
+        """
+        rv = np.linspace(0, np.pi, 100)
+        pdf = np.sin(rv)**3/((1-beta*np.cos(rv))**4)
+        generator = xpeUnivariateGenerator(rv, pdf)
+        values = np.pi - generator.rvs(nevt) # ref system with +Z up
+        if nevt==1:
+            return values[0]
+        return values
 
-
+    def __photoelectron_phi_1(self, pol_angle, pol_level, nevt = 1):
+        """ Get photoelectron phi for beam polarized at level 
+        pol_level (from 0 to 1) and angle pol_angle (rad) - spline 1d
+        """
+        rv = np.linspace(0, 2*np.pi, 100)
+        pdf = (1-pol_level) + (2*pol_level)*np.cos(rv+ pol_angle)**2
+        generator = xpeUnivariateGenerator(rv, pdf)
+        values = generator.rvs(nevt)
+        if nevt==1:
+            return values[0]
+        return values
+    
 def test_random():
     """
     """
@@ -141,16 +173,51 @@ def test_random():
 def test_univariate(num_events=100000, num_bins=100):
     """
     """
-    rv = numpy.linspace(0, 2*numpy.pi, 100)
-    pdf = numpy.cos(rv)**2/numpy.pi
+    rv = np.linspace(0, 2*np.pi, 100)
+    pdf = np.cos(rv)**2/np.pi
     generator = xpeUnivariateGenerator(rv, pdf)
     values = generator.rvs(num_events)
     h = plt.hist(values, bins=num_bins)
-    bin_width = numpy.pi*2/num_bins
+    bin_width = np.pi*2/num_bins
     plt.plot(rv, pdf*num_events*bin_width)
     plt.show()
 
+def compare_with_root(N = 1000, energy = 5.9):
+    r = xperandom()
+    b = np.sqrt(1.0 - np.power(((energy - 0.5)/511. + 1),-2.))
+    # beta da 0.02 a 0.2
+
+    # test vs ROOT
+    import ROOT
+    ThetaDist = ROOT.TF1("ThetaDist","[0]*pow(sin(x), 3.0)/pow(1.0-[1]*cos(x), 4.0)", 0.0, ROOT.TMath.Pi());
+    ThetaDist.SetParameter(0, 1.0);
+
+    h1 = ROOT.TH1F("h1", "h ROOT", 100,0,ROOT.TMath.Pi())
+    h2 = ROOT.TH1F("h2", "h np", 100,0,ROOT.TMath.Pi())
+    h2.SetLineColor(2)
+    print "Extract %d evts" %N
+    from time import time
     
+    # extract ROOT
+    t0 = time()
+    for i in range(N):
+        ThetaDist.SetParameter(1, b);
+        h1.Fill(ThetaDist.GetRandom())
+    t0 = time()-t0
+    print "root time", t0
+    
+    # exctract np
+    t0 = time()
+    for i in range(N):
+        h2.Fill(r.photoelectron_theta(b))
+    t0 = time()-t0
+    print "numpy time", t0
+    
+    ccc = ROOT.TCanvas()
+    h1.Draw()
+    h2.Draw("sames")
+    raw_input("Enter to close canvas")
+
+
 if __name__ == '__main__':
     test_univariate()
-    

@@ -42,7 +42,7 @@ class xpetrack:
         This is a beam property, not a single photon one!
         """
         self.pol_angle = np.deg2rad(angle) # in rad
-        self.pol_level = level               # 0 to 1
+        self.pol_level = level             # 0 to 1
     
     def set_photon(self, energy, x, y, z):
         """ Set conversion point of the xray 
@@ -59,20 +59,9 @@ class xpetrack:
         """
         pass
 
-    def get_photoelectron_theta(self):
-        """
-        """
-        #ELECTRON_MASS = 511. 
-        beta = np.sqrt(1.0 - np.power((self.ph_energy/511. + 1),-2.))
-        pass
-        
-    def get_photoelectron_phi(self):
-        """
-        """
-        pass
     
     def extract_phelectron(self):
-        """
+        """ First step in building a track: extract photoelectron
         """
         # first select converting element
         self.conv_element = self.gas.GetConvertingElement(self.ph_energy,
@@ -82,13 +71,15 @@ class xpetrack:
                       self.conv_element.kEdge))
         self.res_energy  =  self.ph_energy - self.conv_element.kEdge
         # then extract photoelectron direction
+        #ELECTRON_MASS = 511. 
+        beta = np.sqrt(1.0 - np.power((self.ph_energy/511. + 1),-2.))
+        self.phe_theta = self.rnd.photoelectron_theta(beta)
+        self.phe_phi   = self.rnd.photoelectron_phi(self.pol_angle, self.pol_level)
 
+        self.__cx = np.sin(self.phe_theta)*np.cos(self.phe_phi)
+        self.__cy = np.sin(self.phe_theta)*np.sin(self.phe_phi)
+        self.__cz = np.cos(self.phe_theta)
         
-        #PhotoelectronTheta = Photon->GetPhotoelectronTheta();
-        #PhotoelectronPhi   = Photon->GetPhotoelectronPhi();
-        #CX = sin(PhotoelectronTheta)*cos(PhotoelectronPhi);
-        #CY = sin(PhotoelectronTheta)*sin(PhotoelectronPhi);
-        #CZ = cos(PhotoelectronTheta);
 
   
 if __name__ == '__main__':
@@ -97,10 +88,24 @@ if __name__ == '__main__':
     r.set_seed(666) # diabolic seed
     # test one track
     t = xpetrack(g,r)
-    t.set_polarization(30., 1.)
-    t.set_photon(5.9, 0, 0, 0.711544053318)
-    t.extract_phelectron()
+    t.set_polarization(30., 0.5)
+    t.set_photon(5.9, 0, 0, 0.711544053318) # E, z,y,z
 
+    import matplotlib.pyplot as plt
+    tl = []
+    pl = []
+    for i in xrange(1000):
+        t.extract_phelectron()
+        tl.append(np.rad2deg(t.phe_theta))
+        pl.append(np.rad2deg(t.phe_phi))
+    plt.figure(1)
+    plt.subplot(211)
+    th = plt.hist(np.array(tl), bins=100)
+    plt.subplot(212)
+    ph = plt.hist(np.array(pl), bins=100)
+    plt.show()  
+
+    
     #
     #ll = []
     #for i in xrange(1):
