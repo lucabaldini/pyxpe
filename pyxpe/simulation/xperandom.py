@@ -95,6 +95,8 @@ class xperandom:
         """ Set the seed of the pseudo-random generator
         """
         self.engine.seed(seed)
+        #set seed also for numpy random generator
+        np.random.seed(seed)
 
     def random(self):
         """ Main engine call
@@ -113,9 +115,14 @@ class xperandom:
         return self.engine.setstate(state)
     
     def exp(self, l):
+        """ e**(x/l) as in ROOT:TRandom:Exp
         """
+        return self.engine.expovariate(1./l)
+
+    def uniform(self, a, b):
+        """ 
         """
-        return self.engine.expovariate(l)
+        return self.engine.uniform(a, b)
 
     def photoelectron_theta(self, beta, nevt = 1):
         """ Get photoelectron theta
@@ -220,4 +227,14 @@ def compare_with_root(N = 1000, energy = 5.9):
 
 
 if __name__ == '__main__':
-    test_univariate()
+    #test_univariate()
+    r = xperandom()
+    b = np.sqrt(1.0 - np.power(((5.9 - 0.5)/511. + 1),-2.))
+    r.set_seed(666) # diabolic seed
+    print r.random()
+    print r.photoelectron_theta(b)
+    print r.photoelectron_theta(b)
+    r.set_seed(666) # diabolic seed
+    print r.random()
+    print r.photoelectron_theta(b)
+    print r.photoelectron_theta(b)

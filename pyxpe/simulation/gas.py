@@ -21,7 +21,6 @@
 # Main class for running a simulation job (an `experiment')
 # follows roughly the concept of xpesim/TExperiment
 
-import xperandom
 import os
 import numpy as np
 from scipy.interpolate import interp1d
@@ -176,13 +175,12 @@ class gasmix:
                                                             mode))
         return 1./MeanFreePath
         
-    def GetScatteringElement(self, energy, mode, rnd):
+    def GetScatteringElement(self, energy, mode, r0):
         """ \brief EXTRACTthe element scattering a travelling photoelectron.
         The element in the mixture is extracted according to the relative 
         values ofthe elastic cross sections at a given energy.
         Energy to be provided in keV, mode can be either RUTHERFORD OR MOTT.
         """
-        r0 = rnd.random()
         total_x_sect = self.GetElasticMeanFreePath(energy, mode) # 1/x-section
         partial_probability = 0
         for elem in self.elements_list:
@@ -353,10 +351,11 @@ class element:
                           mode)
             return -1
         
-    def GetScatteringAngle(self, energy, rnd, mode):
+    def GetScatteringAngle(self, energy, mode, r0, r1):
         """Returns a RANDOM scattering angle at a given energy.
         Energy to be provided in keV; mode can be either RUTHERFORD or MOTT.
         The cosine of the angle is returned.
+        r0 and r1 are 2 random number (from external generator)
         """
         if isinstance( energy , (int, float) ):
             energy = np.array([energy])
@@ -364,14 +363,12 @@ class element:
             logger.error("Cannot eval Scattering Angle below %f keV"%\
                           MIN_ANALYTIC_CROSS_SECTIONS_ENERGY)
             return -1
-        screening_factor = GetRutherfordScreeningFactor(energy)
-        r0 = rnd.random()
-        r1 = rnd.random()
+        screening_factor = self.GetRutherfordScreeningFactor(energy)
         if mode.lower()=='rutherford':
-            return np.acos(1.-(2.*screening_factor*r0)/(1.+screening_factor-r1))
+            return np.arccos(1.-(2.*screening_factor*r0)/(1.+screening_factor-r1))
         elif mode.lower()=='mott':
             CorrectionFactor = 2.2 - ((92.0 - self.AtomicNumber)/92.0);
-            return np.acos(1.-(2.*screening_factor*np.power((r0), CorrectionFactor))/(1.+screening_factor-r1))
+            return np.arccos(1.-(2.*screening_factor*np.power((r0), CorrectionFactor))/(1.+screening_factor-r1))
         else:
             logger.error("Mode can be only rutherford or mott, not %s" %\
                           mode)

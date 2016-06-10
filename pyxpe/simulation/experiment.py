@@ -83,7 +83,7 @@ class experiment:
         Lambda = 0.1*self.gas.GetPhotoelectricCrossSection(energy)*self.gas.Density
         z = -10
         while z<self.gem_z: # Z=0 is GEM position
-            z = self.tickness - self.rnd.exp(Lambda) #rnd->Exp(1./Lambda)
+            z = self.tickness - self.rnd.exp(1./Lambda) #rnd->Exp(1./Lambda)
         print 1./Lambda, z
         # now that the event converted, init a track object
         self.track = xpetrack(self.gas, self.rnd)
