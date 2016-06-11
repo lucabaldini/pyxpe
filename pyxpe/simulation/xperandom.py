@@ -22,10 +22,12 @@
 # Wrapper lib for random number generation
 # to change engine (python, root, heprep), by changing only this file
 
-# default now is python pseudo-random generator
+# old choice was python pseudo-random generator
 # https://docs.python.org/2.7/library/random.html
-import random
+#import random
 
+# current default is numpy
+# http://docs.scipy.org/doc/numpy/reference/routines.random.html
 import numpy as np 
 from scipy.interpolate import InterpolatedUnivariateSpline
 import matplotlib.pyplot as plt
@@ -84,7 +86,7 @@ class xperandom:
     """
 
     def __init__(self):
-        self.engine = random
+        self.engine = np.random
 
     def get_engine(self):
         """ Return the engine, in order to use it directly
@@ -95,8 +97,6 @@ class xperandom:
         """ Set the seed of the pseudo-random generator
         """
         self.engine.seed(seed)
-        #set seed also for numpy random generator
-        np.random.seed(seed)
 
     def random(self):
         """ Main engine call
@@ -107,22 +107,25 @@ class xperandom:
     def get_state(self):
         """
         """
-        return self.engine.getstate()
+        return self.engine.get_state()
 
     def set_state(self, state):
         """
         """
-        return self.engine.setstate(state)
+        return self.engine.set_state(state)
     
-    def exp(self, l):
+    def exp(self, l, n = 1):
         """ e**(x/l) as in ROOT:TRandom:Exp
+        docs.scipy.org/doc/numpy/reference/
+        generated/numpy.random.exponential.html
         """
-        return self.engine.expovariate(1./l)
+        return self.engine.exponential(l, n)
 
-    def uniform(self, a, b):
-        """ 
+    def uniform(self, a, b, n=1):
+        """ http://docs.scipy.org/doc/numpy/reference/
+        generated/numpy.random.uniform.html
         """
-        return self.engine.uniform(a, b)
+        return self.engine.uniform(a, b, n)
 
     def photoelectron_theta(self, beta, nevt = 1):
         """ Get photoelectron theta
@@ -162,20 +165,37 @@ def test_random():
     """
     """
     r = xperandom()
-     
+
+    print "Test direct vs wrapped call:"
     r.get_engine().seed(2)
     print("Direct engine call:", \
           r.get_engine().random(), \
           r.get_engine().random())
-    
     r.set_seed(2)
     print("Wrapped call:", r.random(), r.random())
-    
+
+    print "Test seeding:"
+    b = np.sqrt(1.0 - np.power(((5.9 - 0.5)/511. + 1),-2.))
+    r.set_seed(666) # diabolic seed
+    print r.random()
+    print r.photoelectron_theta(b)
+    print r.photoelectron_theta(b)
+    r.set_seed(666) 
+    print r.random()
+    print r.photoelectron_theta(b)
+    print r.photoelectron_theta(b)
+
+    print "Test state dump:"
     currentstate = r.get_state()
     #print ("Get state", currentstate)
-    print("NextRandom", r.random())
+    print("NextRandom", r.random(), r.photoelectron_theta(b))
     r.set_state(currentstate)
-    print("PrevRandom", r.random())
+    print("PrevRandom", r.random(), r.photoelectron_theta(b))
+
+        
+    print "Test exp:", r.exp(2, 10)
+    print "Test uniform", r.uniform(2,5.2, 10)
+    
 
 def test_univariate(num_events=100000, num_bins=100):
     """
@@ -227,14 +247,7 @@ def compare_with_root(N = 1000, energy = 5.9):
 
 
 if __name__ == '__main__':
+    test_random()
     #test_univariate()
-    r = xperandom()
-    b = np.sqrt(1.0 - np.power(((5.9 - 0.5)/511. + 1),-2.))
-    r.set_seed(666) # diabolic seed
-    print r.random()
-    print r.photoelectron_theta(b)
-    print r.photoelectron_theta(b)
-    r.set_seed(666) # diabolic seed
-    print r.random()
-    print r.photoelectron_theta(b)
-    print r.photoelectron_theta(b)
+    
+    
