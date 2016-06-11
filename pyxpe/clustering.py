@@ -178,15 +178,58 @@ class xpeCluster:
         xp = self.projection1d(pivot, phi)
         return numpy.sum((xp**order)*self.adc_values)/self.pulse_height
 
-    def fit_spline(self):
+    def fit_spline(self, zero_suppression=25):
         """
         """
         from scipy.interpolate import UnivariateSpline
-        weights = (self.adc_values/float(self.adc_values.max()))**0.5
-        s = UnivariateSpline(self.x, self.y, w=weights, s=0.5)
-        _x = numpy.linspace(self.x.min(), self.x.max(), 25)
-        _y = s(_x)
-        plt.plot(_x, _y, '-', lw=2, color='black')
+        _mask = self.adc_values >= zero_suppression
+        x = self.x[_mask]
+        y = self.y[_mask]
+        adc_values = self.adc_values[_mask]
+        weights = (adc_values/float(adc_values.max()))**0.5
+        dx = (x - self.baricenter.x())
+        dy = (y - self.baricenter.y())
+        xp = numpy.cos(self.phi0)*dx + numpy.sin(self.phi0)*dy
+        yp = -numpy.sin(self.phi0)*dx + numpy.cos(self.phi0)*dy
+        s = UnivariateSpline(xp, yp, w=weights, s=0.5)        
+        _xp = numpy.linspace(xp.min(), xp.max(), 25)
+        _yp = s(_xp)
+        dx = numpy.cos(-self.phi0)*_xp + numpy.sin(-self.phi0)*_yp
+        dy = -numpy.sin(-self.phi0)*_xp + numpy.cos(-self.phi0)*_yp
+        x = dx + self.baricenter.x()
+        y = dy + self.baricenter.y()
+        plt.plot(x, y, '-', lw=2, color='black')
+
+    def fit_spine(self, num_nodes=7):
+        """Just playing around.
+
+        Warning
+        -------
+        This is horrible and it should be either rewritten properly or
+        deleted.
+        """
+        dx = (self.x - self.baricenter.x())
+        dy = (self.y - self.baricenter.y())
+        xp = numpy.cos(self.phi0)*dx + numpy.sin(self.phi0)*dy
+        yp = -numpy.sin(self.phi0)*dx + numpy.cos(self.phi0)*dy
+        bins = numpy.linspace(xp.min(), xp.max(), num_nodes + 1)
+        xsp = []
+        ysp = []
+        for i in range(num_nodes):
+            _xmin, _xmax = bins[i:i+2]
+            _mask = (xp > _xmin)*(xp < _xmax) 
+            _w = numpy.sum(self.adc_values[_mask])
+            _xs = numpy.sum(xp[_mask]*self.adc_values[_mask])/_w
+            _ys = numpy.sum(yp[_mask]*self.adc_values[_mask])/_w
+            xsp.append(_xs)
+            ysp.append(_ys)
+        xsp = numpy.array(xsp)
+        ysp = numpy.array(ysp)
+        xs = numpy.cos(-self.phi0)*xsp + numpy.sin(-self.phi0)*ysp
+        ys = -numpy.sin(-self.phi0)*xsp + numpy.cos(-self.phi0)*ysp
+        xs = (xs + self.baricenter.x())
+        ys = (ys + self.baricenter.y())
+        plt.plot(xs, ys, lw=2)
 
     def draw(self, coordinate_system, color_map='Reds', hexcol_padding=0.1,
              text=True, show=True):
@@ -213,12 +256,12 @@ class xpeCluster:
                          verticalalignment='center', size=8, color=col)
         plt.xlabel('x [mm]')
         plt.ylabel('y [mm]')
-        #self.baricenter.draw()
-        #self.axis0.draw()
-        #self.conversion_point.draw()
+        self.baricenter.draw()
+        self.axis0.draw()
+        self.conversion_point.draw()
         #self.conversion_baricenter.draw()
-        #self.axis1.draw()
-        #self.fit_spline()
+        self.axis1.draw()
+        self.fit_spline()
         if show:
             plt.show()
         return fig
