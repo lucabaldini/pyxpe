@@ -50,7 +50,11 @@ class xpepoint:
             (self.x, self.y, self.z, self.E)\
             + " dir(x,y,z): (%.2f,%.2f,%.2f)" %\
             (self.cx, self.cy, self.cz)
-        
+
+    def __sub__(self, other):
+        return xpepoint(self.x-other.x, self.y-other.y, self.z-other.z,
+                        self.E-other.E,
+                        self.cx-other.cx, self.cy-other.cy, self.cz-other.cz)
         
 
 class xpetrack:
@@ -116,14 +120,30 @@ class xpetrack:
                                           self.__cx, self.__cy, self.__cz)]
         # propagate ultil x-section permits or
         # track outside the detector (TBD)
+        self.__total_ion_pair = 0
+        self.__ion_pair_x = np.array([])
+        self.__ion_pair_y = np.array([])
+        self.__ion_pair_z = np.array([])
         while self.phe_scattering_v[-1].E > MIN_ANALYTIC_CROSS_SECTIONS_ENERGY:
-            self.phe_scattering_v.append(self.eval_next_point(self.phe_scattering_v[-1]))
-        print "GOT %d points" % len(self.phe_scattering_v)
+            self.phe_scattering_v.append(self.eval_next_point(
+                self.phe_scattering_v[-1]))
+        # Last electrons are created in the coordinates of the last collision.
+        if(self.phe_scattering_v[-1].E <= MIN_ANALYTIC_CROSS_SECTIONS_ENERGY
+           and len(self.phe_scattering_v)>0):
+            nPairs =  self.get_npairs(self.phe_scattering_v[-1].E)
+            self.__ion_pair_x = np.append(self.__ion_pair_x, \
+                                          np.array(nPairs*[self.phe_scattering_v[-1].x]))
+            self.__ion_pair_y = np.append(self.__ion_pair_y, \
+                                          np.array(nPairs*[self.phe_scattering_v[-1].y]))
+            self.__ion_pair_z = np.append(self.__ion_pair_z, \
+                                          np.array(nPairs*[self.phe_scattering_v[-1].z]))
 
+        
     def eval_next_point(self, phe_point):
         """\brief Evaluate coordinates of the next step in photoelectron path. 
         The formula are taken from Joy's book - 
         note that there is an error in the book: V1=AM*sin(Phi)->V1=AN*sin(Phi)
+        Eval also ionization here and update global variables.
         """
         logger.debug("Propagate from %s" %phe_point)
         # get mean free path and extract a random number for path
@@ -151,17 +171,48 @@ class xpetrack:
         CA   = phe_point.cx*np.cos(phi) + V1*V3 + phe_point.cy*V2*V4;
         CB   = phe_point.cy*np.cos(phi) + V4*(phe_point.cz*V1 -phe_point.cx*V2)
         CC   = phe_point.cz*np.cos(phi) + V2*V3 - phe_point.cy*V1*V4;
-        # eval energy loss
-        EnergyLoss = path*self.gas.GetStoppingPower(phe_point.E);
-        
+        # eval energy loss - must not exceed residual energy
+        energy_loss = min(path*self.gas.GetStoppingPower(phe_point.E),
+                          phe_point.E);
         # build next point
         next_point = xpepoint(phe_point.x + path*CA,
                               phe_point.y + path*CB,
                               phe_point.z + path*CC,
-                              phe_point.E - EnergyLoss,
+                              phe_point.E - energy_loss,
                               CA, CB, CC )
         logger.debug("Propagate to %s" %next_point)
+
+        #
+        # Eval ionization, stored in 'ion_pair' variables
+        #
+        nPairs =  self.get_npairs(energy_loss)
+        self.__total_ion_pair += nPairs
+        Position = self.rnd.uniform(0,1,nPairs);
+        self.__ion_pair_x = np.append(self.__ion_pair_x, \
+                                      phe_point.x + path*CA*Position)
+        self.__ion_pair_y = np.append(self.__ion_pair_y, \
+                                      phe_point.y + path*CB*Position)
+        self.__ion_pair_z = np.append(self.__ion_pair_z, \
+                                      phe_point.z + path*CC*Position)
+         
         return next_point
+
+    def get_ion_pairs(self):
+        """ 
+        """
+        return (self.__ion_pair_x, self.__ion_pair_y, self.__ion_pair_z)
+        
+
+    def get_npairs(self, energy):
+        """ \brief Returns the number of e-ion pairs generated between 
+        two collisions.
+        This version uses Compound Poisson distribution
+        """
+        MeanNumberSecondary =  1000.*energy/self.gas.WIonization
+        NumberPrimary = self.rnd.poisson(MeanNumberSecondary/3.)
+        NumberSecondaries = sum(self.rnd.poisson(3., NumberPrimary))
+        return NumberSecondaries
+        
             
 def test_theta_phi():
     g = gasmix(12, 1.0)
@@ -185,7 +236,7 @@ def test_theta_phi():
     plt.show()  
 
 
-def plot_track(pts_list):
+def plot_track(pts_list, ion_list = None):
     import matplotlib as mpl
     from mpl_toolkits.mplot3d import Axes3D
     import matplotlib.pyplot as plt
@@ -198,15 +249,20 @@ def plot_track(pts_list):
         y[i] = pts_list[i].y
         z[i] = pts_list[i].z
 
+        
     fig = plt.figure()
     ax = fig.add_subplot(211, projection='3d')
     ax.set_xlabel('x [cm]')
     ax.set_ylabel('y [cm]')
     ax.set_zlabel('z [cm]')
     plt.plot(x, y, z)
+    if ion_list !=None:
+        plt.plot(ion_list[0], ion_list[1], ion_list[2], 'ro')
     fig.add_subplot(212)
     plt.grid(color='gray')
     plt.plot(x, y)
+    if ion_list !=None:
+        plt.plot(ion_list[0], ion_list[1], 'ro')
     plt.show()
     
     
@@ -217,15 +273,16 @@ if __name__ == '__main__':
     r = xperandom()
     r.set_seed(666) # diabolic seed
     # test one track
+    logger.setLevel(20) # INFO
     t = xpetrack(g,r)
     t.set_polarization(30., 0.5)
     t.set_photon(5.9, 0, 0, 0.7) # E, x,y,z
 
-    for j in xrange(1):
+    for j in xrange(10):
         print ">>>>>>>>>>>>>>>>>", j
         t.extract_phelectron()
         t.propagate_track()
-        plot_track(t.phe_scattering_v)
+        plot_track(t.phe_scattering_v, t.get_ion_pairs())
     
     #test_theta_phi()
     

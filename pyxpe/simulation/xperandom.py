@@ -127,6 +127,12 @@ class xperandom:
         """
         return self.engine.uniform(a, b, n)
 
+    def poisson(self, m, n=1):
+        """ http://docs.scipy.org/doc/numpy/reference/
+        generated/numpy.random.poisson.html
+        """
+        return self.engine.poisson(m, n)
+
     def photoelectron_theta(self, beta, nevt = 1):
         """ Get photoelectron theta
         """
