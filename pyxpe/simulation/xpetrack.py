@@ -128,7 +128,6 @@ class xpetrack:
         logger.debug("Propagate from %s" %phe_point)
         # get mean free path and extract a random number for path
         lambd = self.gas.GetElasticMeanFreePath(phe_point.E, "MOTT") # cm.
-        print lambd
         path  = self.rnd.exp(lambd)
         # eval next scattering element and direction 
         # should we use energy at the end of the track?
@@ -157,7 +156,7 @@ class xpetrack:
         
         # build next point
         next_point = xpepoint(phe_point.x + path*CA,
-                              phe_point.z + path*CB,
+                              phe_point.y + path*CB,
                               phe_point.z + path*CC,
                               phe_point.E - EnergyLoss,
                               CA, CB, CC )
@@ -170,7 +169,7 @@ def test_theta_phi():
     r.set_seed(666) # diabolic seed
     t = xpetrack(g,r)
     t.set_polarization(30., 0.5)
-    t.set_photon(5.9, 0, 0, 0.711544053318) # E, z,y,z
+    t.set_photon(5.9, 0, 0, 0.7) # E, z,y,z
     import matplotlib.pyplot as plt
     tl = []
     pl = []
@@ -198,11 +197,16 @@ def plot_track(pts_list):
         x[i] = pts_list[i].x
         y[i] = pts_list[i].y
         z[i] = pts_list[i].z
-        #print i, ":", pts_list[i].x,pts_list[i].y,pts_list[i].z
 
     fig = plt.figure()
-    ax = fig.gca(projection='3d')
+    ax = fig.add_subplot(211, projection='3d')
+    ax.set_xlabel('x [cm]')
+    ax.set_ylabel('y [cm]')
+    ax.set_zlabel('z [cm]')
     plt.plot(x, y, z)
+    fig.add_subplot(212)
+    plt.grid(color='gray')
+    plt.plot(x, y)
     plt.show()
     
     
@@ -211,13 +215,13 @@ def plot_track(pts_list):
 if __name__ == '__main__':
     g = gasmix(12, 1.0)
     r = xperandom()
-    r.set_seed(12345) # diabolic seed
+    r.set_seed(666) # diabolic seed
     # test one track
     t = xpetrack(g,r)
     t.set_polarization(30., 0.5)
-    t.set_photon(5.9, 0, 0, 0.711544053318) # E, x,y,z
+    t.set_photon(5.9, 0, 0, 0.7) # E, x,y,z
 
-    for j in xrange(10):
+    for j in xrange(1):
         print ">>>>>>>>>>>>>>>>>", j
         t.extract_phelectron()
         t.propagate_track()
