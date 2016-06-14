@@ -58,7 +58,20 @@ class xpepoint:
         
 
 class xpetrack:
-    """Experiment object
+    """Track object: 
+    photoelectron (path and ionization) & Auger electron(path and ionization)
+
+    Output quentities:
+    phe_theta : Theta angle of emission of photoelectron
+    phe_phi   : Phi angle of emission of photoelectron;
+                Contains the MC Polarization information.
+    [phe|aug]_scattering_v : vector of xpepoint objects with information on the
+                             photoelectron|auger electron path. 
+                             The first item contains the actual ele. emission
+    get_ion_pairs() : return the 3 list of (x,y,z) position of ionization pairs;
+    get_ion_stats() : return the number of items ions_pairs lists due to
+                      photoelectron and auger electrons, 
+                      to separate the 2 contributions
     """
 
     def __init__(self, gas, rnd ):
@@ -96,12 +109,12 @@ class xpetrack:
         # first select converting element
         self.conv_element = self.gas.GetConvertingElement(self.ph_energy,
                                                           self.rnd.random())
-        logger.debug("Photon absopt in %s (k-edge %f) "%
+        logger.info("Photon absopt in %s (k-edge %f) "%
                      (self.conv_element.ChemicalSymbol,
                       self.conv_element.kEdge))
         self.res_energy  =  self.ph_energy - self.conv_element.kEdge
-        # then extract photoelectron direction
-        #ELECTRON_MASS = 511. 
+        
+        # then extract photoelectron direction #ELECTRON_MASS = 511. 
         beta = np.sqrt(1.0 - np.power((self.ph_energy/511. + 1),-2.))
         self.phe_theta = self.rnd.photoelectron_theta(beta)
         self.phe_phi   = self.rnd.photoelectron_phi(self.pol_angle,
@@ -118,7 +131,7 @@ class xpetrack:
         self.phe_scattering_v = [xpepoint(self.ph_x, self.ph_y, self.ph_z,
                                           self.res_energy,
                                           self.__cx, self.__cy, self.__cz)]
-        # propagate ultil x-section permits or
+        # propagate phe until x-section permits or
         # track outside the detector (TBD)
         self.__total_ion_pair = 0
         self.__ion_pair_x = np.array([])
@@ -130,20 +143,60 @@ class xpetrack:
         # Last electrons are created in the coordinates of the last collision.
         if(self.phe_scattering_v[-1].E <= MIN_ANALYTIC_CROSS_SECTIONS_ENERGY
            and len(self.phe_scattering_v)>0):
-            nPairs =  self.get_npairs(self.phe_scattering_v[-1].E)
+            nPairs =  self.__get_npairs(self.phe_scattering_v[-1].E)
+            self.__total_ion_pair += nPairs
             self.__ion_pair_x = np.append(self.__ion_pair_x, \
                                           np.array(nPairs*[self.phe_scattering_v[-1].x]))
             self.__ion_pair_y = np.append(self.__ion_pair_y, \
                                           np.array(nPairs*[self.phe_scattering_v[-1].y]))
             self.__ion_pair_z = np.append(self.__ion_pair_z, \
                                           np.array(nPairs*[self.phe_scattering_v[-1].z]))
-
-        
+        #
+        # Now take care of Auger electron (extract and propagate)
+        #
+        self.__total_ion_phe   = self.__total_ion_pair # count phe ionization
+        self.__total_ion_auger = 0
+        # Choose between Auger and fluorescence:
+        if self.rnd.random()<= self.conv_element.FluorescenceYield:
+            logger.debug("NO Auger electron - No fluorescence photon simulated")
+            self.aug_scattering_v = None
+            return None
+        # Extract Auger electron 
+        logger.debug("Auger electron with energy %f" % self.conv_element.kEdge)
+        auger_theta = np.arccos(self.rnd.uniform(-1,1))
+        auger_phi   = self.rnd.uniform(0, 2*np.pi)
+        auger_cx = np.sin(auger_theta)*np.cos(auger_phi);
+        auger_cy = np.sin(auger_theta)*np.sin(auger_phi);
+        auger_cz = np.cos(auger_theta);
+        self.aug_scattering_v = [xpepoint(self.ph_x, self.ph_y, self.ph_z,
+                                          self.conv_element.kEdge,
+                                          auger_cx, auger_cy, auger_cz)]
+        # propagate phe until x-section permits or
+        # track outside the detector (TBD)
+        while self.aug_scattering_v[-1].E > MIN_ANALYTIC_CROSS_SECTIONS_ENERGY:
+            self.aug_scattering_v.append(self.eval_next_point(
+                self.aug_scattering_v[-1]))
+        # Last electrons are created in the coordinates of the last collision.
+        if(self.aug_scattering_v[-1].E <= MIN_ANALYTIC_CROSS_SECTIONS_ENERGY):
+           nPairs =  self.__get_npairs(self.aug_scattering_v[-1].E)
+           self.__total_ion_pair += nPairs
+           self.__ion_pair_x = np.append(self.__ion_pair_x, \
+                                         np.array(nPairs*[self.aug_scattering_v[-1].x]))
+           self.__ion_pair_y = np.append(self.__ion_pair_y, \
+                                         np.array(nPairs*[self.aug_scattering_v[-1].y]))
+           self.__ion_pair_z = np.append(self.__ion_pair_z, \
+                                         np.array(nPairs*[self.aug_scattering_v[-1].z]))
+        # Update number of Auger electron
+        # (redundant since is len(ion_pairs)-ion_phe)
+        self.__total_ion_auger = self.__total_ion_pair - self.__total_ion_phe
+        return None
+    
     def eval_next_point(self, phe_point):
         """\brief Evaluate coordinates of the next step in photoelectron path. 
         The formula are taken from Joy's book - 
         note that there is an error in the book: V1=AM*sin(Phi)->V1=AN*sin(Phi)
         Eval also ionization here and update global variables.
+        Valid for photoelectron and auger track
         """
         logger.debug("Propagate from %s" %phe_point)
         # get mean free path and extract a random number for path
@@ -181,11 +234,10 @@ class xpetrack:
                               phe_point.E - energy_loss,
                               CA, CB, CC )
         logger.debug("Propagate to %s" %next_point)
-
         #
         # Eval ionization, stored in 'ion_pair' variables
         #
-        nPairs =  self.get_npairs(energy_loss)
+        nPairs =  self.__get_npairs(energy_loss)
         self.__total_ion_pair += nPairs
         Position = self.rnd.uniform(0,1,nPairs);
         self.__ion_pair_x = np.append(self.__ion_pair_x, \
@@ -194,16 +246,9 @@ class xpetrack:
                                       phe_point.y + path*CB*Position)
         self.__ion_pair_z = np.append(self.__ion_pair_z, \
                                       phe_point.z + path*CC*Position)
-         
         return next_point
 
-    def get_ion_pairs(self):
-        """ 
-        """
-        return (self.__ion_pair_x, self.__ion_pair_y, self.__ion_pair_z)
-        
-
-    def get_npairs(self, energy):
+    def __get_npairs(self, energy):
         """ \brief Returns the number of e-ion pairs generated between 
         two collisions.
         This version uses Compound Poisson distribution
@@ -212,6 +257,28 @@ class xpetrack:
         NumberPrimary = self.rnd.poisson(MeanNumberSecondary/3.)
         NumberSecondaries = sum(self.rnd.poisson(3., NumberPrimary))
         return NumberSecondaries
+    
+    def get_ion_pairs(self):
+        """ Return the lists of ion pairs position (x,y,z).
+        They contains ALL the ions, from photoelectron (at the beginning) 
+        and Auger electron (the ending part).
+        To divide the list in the 2 contribution, see get_ion_stats()
+        """
+        return (self.__ion_pair_x, self.__ion_pair_y, self.__ion_pair_z)
+
+    def get_ion_stats(self):
+        """ Return the number of photoelectron pairs in the ions_pairs list
+        and the number of Auger electron pair in the same list.
+        Useful to separate the 2 contributions.
+        The sum must be the len of the list.
+        """
+        return (self.__total_ion_phe, self.__total_ion_auger)
+
+    def get_photoelectron_phi(self):
+        """ Get direct info on the photoelectron emission angle
+        """
+        return self.phe_phi
+
         
             
 def test_theta_phi():
@@ -240,27 +307,34 @@ def plot_track(pts_list, ion_list = None):
     import matplotlib as mpl
     from mpl_toolkits.mplot3d import Axes3D
     import matplotlib.pyplot as plt
-    n = len(pts_list)
-    x = np.zeros(n)
-    y = np.zeros(n)
-    z = np.zeros(n)
-    for i in xrange(n):
-        x[i] = pts_list[i].x
-        y[i] = pts_list[i].y
-        z[i] = pts_list[i].z
-
-        
+    n = []
+    x = []
+    y = []
+    z = []
+    for pl in pts_list:
+        n.append(len(pl))
+        x.append(np.zeros(n[-1]))
+        y.append(np.zeros(n[-1]))
+        z.append(np.zeros(n[-1]))
+        for i in xrange(n[-1]):
+            x[-1][i] = pl[i].x
+            y[-1][i] = pl[i].y
+            z[-1][i] = pl[i].z
+            
     fig = plt.figure()
     ax = fig.add_subplot(211, projection='3d')
     ax.set_xlabel('x [cm]')
     ax.set_ylabel('y [cm]')
     ax.set_zlabel('z [cm]')
-    plt.plot(x, y, z)
+    for i in xrange(len(n)):
+        plt.plot(x[i], y[i], z[i])
+        
     if ion_list !=None:
         plt.plot(ion_list[0], ion_list[1], ion_list[2], 'ro')
     fig.add_subplot(212)
     plt.grid(color='gray')
-    plt.plot(x, y)
+    for i in xrange(len(n)):
+        plt.plot(x[i], y[i])
     if ion_list !=None:
         plt.plot(ion_list[0], ion_list[1], 'ro')
     plt.show()
@@ -282,7 +356,8 @@ if __name__ == '__main__':
         print ">>>>>>>>>>>>>>>>>", j
         t.extract_phelectron()
         t.propagate_track()
-        plot_track(t.phe_scattering_v, t.get_ion_pairs())
+        print 
+        plot_track([t.phe_scattering_v, t.aug_scattering_v], t.get_ion_pairs())
     
     #test_theta_phi()
     
