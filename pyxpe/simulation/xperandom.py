@@ -114,12 +114,19 @@ class xperandom:
         """
         return self.engine.set_state(state)
     
-    def exp(self, l, n = 1):
+    def exp(self, l, n=1):
         """ e**(x/l) as in ROOT:TRandom:Exp
         docs.scipy.org/doc/numpy/reference/
         generated/numpy.random.exponential.html
         """
         return self.engine.exponential(l, n)
+
+    def exp_in_range(self,l, a, b):
+        """ As exp, but in finite range (a,b)
+        """
+        aa = np.exp(-a/l)
+        bb = np.exp(-b/l)
+        return -l*np.log(bb + self.random()*(aa-bb))
 
     def uniform(self, a, b, n=1):
         """ http://docs.scipy.org/doc/numpy/reference/

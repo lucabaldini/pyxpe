@@ -92,6 +92,10 @@ class experiment:
         while z<self.gem_z: # Z=0 is GEM position
             z = self.tickness - self.rnd.exp(1./Lambda) #rnd->Exp(1./Lambda)
 
+        # apparently the exp_in_range is slower!
+        #z = self.rnd.exp_in_range(1./Lambda, self.gem_z,
+        #self.gem_z+self.tickness)
+        
         # now that the event converted, eval the track
         self.track.reset()
         self.track.set_photon(x, y, z, energy)
@@ -184,6 +188,6 @@ if __name__ == '__main__':
         e.plot_event()
     t0 = time.time()-t0
     print i, t0, (i+1)/t0
-    
-
-    
+    #99 20.8040440083 4.80675776115
+    #99 12.003002882 8.33124852031 without diffusion
+    #99 19.9677729607 5.00806976306 old exp alg - while loop is faster!
