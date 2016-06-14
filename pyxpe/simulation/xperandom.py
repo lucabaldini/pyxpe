@@ -133,6 +133,13 @@ class xperandom:
         """
         return self.engine.poisson(m, n)
 
+    def multigauss(self, m, s, n = 1):
+        """ Multivariate Gauss (e.g. for multiple gauss with different sigma)
+        http://docs.scipy.org/doc/numpy/reference/
+        generated/numpy.random.multivariate_normal.html
+        """
+        return  self.engine.multivariate_normal(m, s, n)
+
     def photoelectron_theta(self, beta, nevt = 1):
         """ Get photoelectron theta
         """

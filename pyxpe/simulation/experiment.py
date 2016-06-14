@@ -98,6 +98,16 @@ class experiment:
         self.track.extract_phelectron()
         self.track.propagate_track()
 
+        # drift tracks to Gem_Z position:
+        (ion_list_x, ion_list_y, ion_list_z)  = self.track.get_ion_pairs()
+        delta_z = np.sqrt((ion_list_z - self.gem_z)*0.1) # [cm]
+        diffusion_sigma = self.gas.diffusion_sigma*delta_z/1000 # [mm]
+        ss = np.diag(diffusion_sigma)**2
+        self.diffusion_ion_x = self.rnd.multigauss(ion_list_x, ss)[0]
+        self.diffusion_ion_y = self.rnd.multigauss(ion_list_y, ss)[0]
+
+        
+
     def plot_event(self):
         """ for DEBUG, plot the event
         """
@@ -129,17 +139,32 @@ class experiment:
         axx.set_zlabel('z [mm]')
         plt.plot(x, y, z)
         plt.plot(ax, ay, az)
-        ion_list = self.track.get_ion_pairs()
-        logger.info("Found %d ion pairs" % len(ion_list[0])+\
+        (ion_list_x, ion_list_y, ion_list_z)  = self.track.get_ion_pairs()
+        logger.info("Found %d ion pairs" % len(ion_list_x)+\
                     " - %d from photoelectron" % self.track.get_ion_stats()[0])
-        plt.plot(ion_list[0], ion_list[1], ion_list[2], 'ro')
+        plt.plot(ion_list_x, ion_list_y, ion_list_z, 'ro')
         axx1= fig.add_subplot(222)
         axx1.set_xlabel('x [mm]')
-        axx1.set_ylabel('x [mm]')
+        axx1.set_ylabel('y [mm]')
         plt.grid(color='gray')
         plt.plot(x, y)
         plt.plot(ax, ay)
-        plt.plot(ion_list[0], ion_list[1], 'ro')
+        plt.plot(ion_list_x, ion_list_y, 'ro')
+        axx2= fig.add_subplot(224)
+        axx2.set_xlabel('x [mm]')
+        axx2.set_ylabel('y [mm]')
+        plt.grid(color='gray')
+        plt.plot(ion_list_x, ion_list_y, 'ro')
+        plt.plot(self.diffusion_ion_x, self.diffusion_ion_y, 'o')
+        xxx = ion_list_x -self.diffusion_ion_x
+        mmx = xxx.sum()/len(xxx)
+        logger.info("X diffusion m= %f, s= %f" % \
+                    (mmx, np.sqrt((((xxx-mmx)**2)/(len(xxx)-1)).sum())))
+        yyy = ion_list_y -self.diffusion_ion_y
+        mmy = yyy.sum()/len(yyy)
+        logger.info("Y diffusion m= %f, s= %f" % \
+                    (mmy, np.sqrt((((yyy-mmy)**2)/(len(yyy)-1)).sum())))
+        
         plt.show()
         
 if __name__ == '__main__':
