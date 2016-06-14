@@ -100,13 +100,37 @@ class xpetrack:
         self.ph_x = x # conversion point
         self.ph_y = y
         self.ph_z = z
-        logger.debug("Photon with E=%.3f (x,y,z)=(%f,%f,%f)" %\
+        logger.info("Photon with E=%.3f (x,y,z)=(%f,%f,%f)" %\
                      (self.ph_energy,self.ph_x,self.ph_y,self.ph_z ))
 
     def set_detector_bounds(self, xmin, xmax, ymin, ymax, zmin, zmax):
         """
         """
         pass
+
+    def reset(self):
+        """ RESET all relevant quantities
+        """
+        # kill photon
+        self.ph_energy = 0
+        self.ph_x = 0
+        self.ph_y = 0
+        self.ph_z = 0
+        self.phe_theta = None
+        self.phe_phi   = None
+        self.__cx = 0
+        self.__cy = 0
+        self.__cz = 0
+        # kill track segment
+        self.phe_scattering_v = []
+        self.aug_scattering_v = []
+        # kill ionization
+        self.__total_ion_pair  = 0
+        self.__total_ion_phe   = 0
+        self.__total_ion_auger = 0
+        self.__ion_pair_x = np.array([])
+        self.__ion_pair_y = np.array([])
+        self.__ion_pair_z = np.array([])
 
     
     def extract_phelectron(self):
