@@ -61,7 +61,13 @@ class xpetrack:
     """Track object: 
     photoelectron (path and ionization) & Auger electron(path and ionization)
 
-    Output quentities:
+    Coordinates are in mm, angles in rad, energies in keV
+
+    INput quantities:
+    set_polarization(angle, level) : polarization information of the photon
+    set_photon(x, y, z, energy)    : photon conversion point and energy
+
+    OUTput quantities:
     phe_theta : Theta angle of emission of photoelectron
     phe_phi   : Phi angle of emission of photoelectron;
                 Contains the MC Polarization information.
@@ -87,7 +93,7 @@ class xpetrack:
         self.pol_angle = np.deg2rad(angle) # in rad
         self.pol_level = level             # 0 to 1
     
-    def set_photon(self, energy, x, y, z):
+    def set_photon(self, x, y, z, energy):
         """ Set conversion point of the xray 
         """
         self.ph_energy = energy
@@ -200,7 +206,8 @@ class xpetrack:
         """
         logger.debug("Propagate from %s" %phe_point)
         # get mean free path and extract a random number for path
-        lambd = self.gas.GetElasticMeanFreePath(phe_point.E, "MOTT") # cm.
+        # GetElasticMeanFreePath in cm -> mm
+        lambd = 10.*self.gas.GetElasticMeanFreePath(phe_point.E, "MOTT")
         path  = self.rnd.exp(lambd)
         # eval next scattering element and direction 
         # should we use energy at the end of the track?
@@ -225,7 +232,8 @@ class xpetrack:
         CB   = phe_point.cy*np.cos(phi) + V4*(phe_point.cz*V1 -phe_point.cx*V2)
         CC   = phe_point.cz*np.cos(phi) + V2*V3 - phe_point.cy*V1*V4;
         # eval energy loss - must not exceed residual energy
-        energy_loss = min(path*self.gas.GetStoppingPower(phe_point.E),
+        # GetStoppingPower in keV/cm. -> keV/mm
+        energy_loss = min(0.1*path*self.gas.GetStoppingPower(phe_point.E),
                           phe_point.E);
         # build next point
         next_point = xpepoint(phe_point.x + path*CA,
@@ -253,7 +261,7 @@ class xpetrack:
         two collisions.
         This version uses Compound Poisson distribution
         """
-        MeanNumberSecondary =  1000.*energy/self.gas.WIonization
+        MeanNumberSecondary =  1000.*energy/self.gas.WIonization #1000*keV/eV
         NumberPrimary = self.rnd.poisson(MeanNumberSecondary/3.)
         NumberSecondaries = sum(self.rnd.poisson(3., NumberPrimary))
         return NumberSecondaries
@@ -287,7 +295,7 @@ def test_theta_phi():
     r.set_seed(666) # diabolic seed
     t = xpetrack(g,r)
     t.set_polarization(30., 0.5)
-    t.set_photon(5.9, 0, 0, 0.7) # E, z,y,z
+    t.set_photon(0, 0, 0.7, 5.9) # z,y,z, E
     import matplotlib.pyplot as plt
     tl = []
     pl = []
@@ -323,15 +331,17 @@ def plot_track(pts_list, ion_list = None):
             
     fig = plt.figure()
     ax = fig.add_subplot(211, projection='3d')
-    ax.set_xlabel('x [cm]')
-    ax.set_ylabel('y [cm]')
-    ax.set_zlabel('z [cm]')
+    ax.set_xlabel('x [mm]')
+    ax.set_ylabel('y [mm]')
+    ax.set_zlabel('z [mm]')
     for i in xrange(len(n)):
         plt.plot(x[i], y[i], z[i])
         
     if ion_list !=None:
         plt.plot(ion_list[0], ion_list[1], ion_list[2], 'ro')
-    fig.add_subplot(212)
+    ax1= fig.add_subplot(212)
+    ax1.set_xlabel('x [mm]')
+    ax1.set_ylabel('x [mm]')
     plt.grid(color='gray')
     for i in xrange(len(n)):
         plt.plot(x[i], y[i])
@@ -350,15 +360,15 @@ if __name__ == '__main__':
     logger.setLevel(20) # INFO
     t = xpetrack(g,r)
     t.set_polarization(30., 0.5)
-    t.set_photon(5.9, 0, 0, 0.7) # E, x,y,z
+    t.set_photon(0, 0, 0.7, 5.9) # x,y,z, E
 
-    for j in xrange(10):
+    for j in xrange(1):
         print ">>>>>>>>>>>>>>>>>", j
         t.extract_phelectron()
         t.propagate_track()
         print 
         plot_track([t.phe_scattering_v, t.aug_scattering_v], t.get_ion_pairs())
-    
+
     #test_theta_phi()
     
     
