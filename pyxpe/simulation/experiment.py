@@ -87,7 +87,7 @@ class experiment:
         print 1./Lambda, z
         # now that the event converted, init a track object
         self.track = xpetrack(self.gas, self.rnd)
-        self.track.set_photon(energy, x, y, z)
+        self.track.set_photon(x, y, z, energy)
 
         
 
