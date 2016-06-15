@@ -140,6 +140,12 @@ class xperandom:
         """
         return self.engine.poisson(m, n)
 
+    def gauss(self, m, s, n = 1):
+        """http://docs.scipy.org/doc/numpy/reference/
+        generated/numpy.random.normal.html
+        """
+        return self.engine.normal(m, s, n)
+    
     def multigauss(self, m, s, n = 1):
         """ Multivariate Gauss (e.g. for multiple gauss with different sigma)
         http://docs.scipy.org/doc/numpy/reference/

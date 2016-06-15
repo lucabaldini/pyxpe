@@ -106,9 +106,18 @@ class experiment:
         (ion_list_x, ion_list_y, ion_list_z)  = self.track.get_ion_pairs()
         delta_z = np.sqrt((ion_list_z - self.gem_z)*0.1) # [cm]
         diffusion_sigma = self.gas.diffusion_sigma*delta_z/1000 # [mm]
-        ss = np.diag(diffusion_sigma)**2
-        self.diffusion_ion_x = self.rnd.multigauss(ion_list_x, ss)[0]
-        self.diffusion_ion_y = self.rnd.multigauss(ion_list_y, ss)[0]
+        n = len(diffusion_sigma)
+        self.diffusion_ion_x = np.zeros(n)
+        self.diffusion_ion_y = np.zeros(n)
+        for i in xrange(n):
+            self.diffusion_ion_x[i] = self.rnd.gauss(ion_list_x[i],
+                                                     diffusion_sigma[i])
+            self.diffusion_ion_y[i] = self.rnd.gauss(ion_list_y[i], \
+                                                     diffusion_sigma[i])
+        # ok nice try with this, but too slow! Loop above is faster!
+        #ss = np.diag(diffusion_sigma)**2
+        #self.diffusion_ion_x = self.rnd.multigauss(ion_list_x, ss)[0]
+        #self.diffusion_ion_y = self.rnd.multigauss(ion_list_y, ss)[0]
 
         
 
@@ -182,12 +191,13 @@ if __name__ == '__main__':
     #print 10./(e.gas.GetPhotoelectricCrossSection(e.energy)*e.gas.Density)
     import time
     t0 = time.time()
-    for i in xrange(5):
+    for i in xrange(100):
         logger.info("*********** EVENT %d" % i)
         e.process_event(i)
-        e.plot_event()
+        #e.plot_event()
     t0 = time.time()-t0
     print i, t0, (i+1)/t0
     #99 20.8040440083 4.80675776115
     #99 12.003002882 8.33124852031 without diffusion
     #99 19.9677729607 5.00806976306 old exp alg - while loop is faster!
+    #99 12.2789461613 8.14402137501 with diffusion with loop!
