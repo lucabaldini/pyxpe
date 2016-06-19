@@ -191,13 +191,10 @@ if __name__ == '__main__':
     #print 10./(e.gas.GetPhotoelectricCrossSection(e.energy)*e.gas.Density)
     import time
     t0 = time.time()
-    for i in xrange(100):
+    for i in xrange(1):
         logger.info("*********** EVENT %d" % i)
         e.process_event(i)
-        #e.plot_event()
+        e.plot_event()
     t0 = time.time()-t0
     print i, t0, (i+1)/t0
-    #99 20.8040440083 4.80675776115
-    #99 12.003002882 8.33124852031 without diffusion
-    #99 19.9677729607 5.00806976306 old exp alg - while loop is faster!
-    #99 12.2789461613 8.14402137501 with diffusion with loop!
+
