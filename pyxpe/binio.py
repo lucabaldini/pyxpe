@@ -25,7 +25,7 @@ import struct
 import numpy
 
 from pyxpe.event import xpeEventWindowed, xpeEventFullFrame
-
+from pyxpe.xpol  import XPOL_NUM_PIXELS, XPOL_NUM_BUFFERS, XPOL_PIXELS_PER_BUFFER
 
 
 class xpeBinaryFileBase(file):
@@ -82,8 +82,8 @@ class xpeBinaryFileFullFrame(xpeBinaryFileBase):
         -------
         We should return an event object instead of a plain numpy array.
         """
-        data = self.read_words(NUM_PIXELS)
-        adc_counts = numpy.array(data).reshape(NUM_BUFFERS, PIXELS_PER_BUFFER)
+        data = self.read_words(XPOL_NUM_PIXELS )
+        adc_counts = numpy.array(data)#.reshape(XPOL_NUM_BUFFERS, XPOL_PIXELS_PER_BUFFER)
         return adc_counts
             
 
@@ -126,8 +126,16 @@ def open_binary_file(filePath):
         return xpeBinaryFileFullFrame(filePath)
 
     
+def test_fullframe(filePath, num_events):
+    """ scicazzi
+    """
+    input_file = xpeBinaryFileFullFrame(filePath)
+    for i in xrange(args.num_events):
+        event = input_file.next()
+        print event
+    return event
 
-    
+
 
 def test_windowed(filePath, num_events):
     """Read a windowed event file and display the events.
@@ -149,4 +157,5 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--num_events', type=int, default=10,
                         help = 'number of events to be processed')
     args = parser.parse_args()
-    test_windowed(args.infile, args.num_events)
+    #test_windowed(args.infile, args.num_events)
+    evt = test_fullframe(args.infile, args.num_events)
