@@ -9,14 +9,16 @@ G2FWHM = 2.3548200450309493
 
 tt = ROOT.TChain("tree")
 # SELECT RUNS to be analized
-for runid in [393, 394, 395, 396, 397, 398, 399, 400, 401]:
+for runid in [393, 394, 395, 396, 397, 398, 399, 400, 
+              401, 402, 403, 406, 407, 408]:
     tt.Add("/data0/xpe/xpedata/002_%07d/002_%07d_data_TH5.root" %(runid, runid))
 # Note:
 # 1 night gap between run 400 (timeout at 20:11 1/7) and 402 (start 9:37 2/7)
+# 402 ends with timeout, 403 started after ~1 hr -- 403 is very small
 
 # SELECT OPTIONS
 Label      = 'GPD018_fill1'
-TimeBin    = 1.0 #hours
+TimeBin    = 0.5 #hours
 nsigfit    = 1.5
 CUT        = "(fNClusters==1)"
 dh         = ROOT.TDatime(2016,6,30,10,56,21) # started on Jun 30 10:56:21 2016
@@ -24,7 +26,7 @@ TimeOffset = dh.Convert()
 TimeHours  = "((fTimeStamp-%.1f)/3600.)" % TimeOffset
 minEvtInHist = 500
 useFWHM      = False
-useSmallSpot = False
+useSmallSpot = True
 SmallSpotCut = "((fImpactY[0]-0)**2 + (fImpactX[0]-0.5)**2)<(1**2)"
 
 minTime   = (tt.GetMinimum("fTimeStamp")-TimeOffset)/3600.
@@ -45,7 +47,7 @@ resErr   = []
 
 ctmp = ROOT.TCanvas()
 htmp = ROOT.TH1F("htmp", "htmp", 200, 0, 10000)
-g0 = ROOT.TF1("g0", "gaus", 3000, 4000)
+g0 = ROOT.TF1("g0", "gaus", 3000, 4500)
 for i in xrange(Nbins):
     TimeCut = "(%s>=%f && %s <%f)" % \
               (TimeHours, timeBins[i], TimeHours, timeBins[i+1])
@@ -87,7 +89,8 @@ gainErr  = np.array(gainErr)
 resVal   = np.array(resVal)
 resErr   = np.array(resErr)
 N        = len(timeX)
-cTrend = ROOT.TCanvas("gaintrend_%s" %Label,"gaintrend_%s" %Label,1000,700)
+cTrend = ROOT.TCanvas("gaintrend_%s" %Label+"_smallspot"*useSmallSpot,\
+                      "gaintrend_%s" %Label+"_smallspot"*useSmallSpot,1000,700)
 cTrend.Divide(1,2)
 cTrend.cd(1)
 gGain = ROOT.TGraphErrors(N, timeX*3600, gainVal, timeXErr*3600, gainErr)
