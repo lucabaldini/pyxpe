@@ -9,32 +9,39 @@ G2FWHM = 2.3548200450309493
 
 tt = ROOT.TChain("tree")
 # SELECT RUNS to be analized
-for runid in [393, 394, 395, 396, 397, 398]:
+for runid in [393, 394, 395, 396, 397, 398, 399, 400, 401]:
     tt.Add("/data0/xpe/xpedata/002_%07d/002_%07d_data_TH5.root" %(runid, runid))
+# Note:
+# 1 night gap between run 400 (timeout at 20:11 1/7) and 402 (start 9:37 2/7)
 
 # SELECT OPTIONS
 Label      = 'GPD018_fill1'
-Nbins      = 20
+TimeBin    = 1.0 #hours
 nsigfit    = 1.5
 CUT        = "(fNClusters==1)"
 dh         = ROOT.TDatime(2016,6,30,10,56,21) # started on Jun 30 10:56:21 2016
 TimeOffset = dh.Convert()
 TimeHours  = "((fTimeStamp-%.1f)/3600.)" % TimeOffset
+minEvtInHist = 500
 useFWHM      = False
-useSmallSpot = True
+useSmallSpot = False
 SmallSpotCut = "((fImpactY[0]-0)**2 + (fImpactX[0]-0.5)**2)<(1**2)"
 
 minTime   = (tt.GetMinimum("fTimeStamp")-TimeOffset)/3600.
 maxTime   = (tt.GetMaximum("fTimeStamp")-TimeOffset)/3600.
-print "Eval trend from %f hr to %f hr after start" % (minTime, maxTime)
+Nbins     = int((maxTime-minTime)/TimeBin)
+print "Eval trend from %f hr to %f hr after start in %d bins" %\
+    (minTime, maxTime, Nbins)
 
 timeBins = np.linspace(0,maxTime, Nbins+1)
-timeVal = 0.5*(timeBins[1:] +timeBins[:-1])
-timeErr = 0.5*(timeBins[1:] -timeBins[:-1])
-gainVal = np.zeros(Nbins)
-gainErr = np.zeros(Nbins)
-resVal  = np.zeros(Nbins)
-resErr  = np.zeros(Nbins)
+timeVal  = 0.5*(timeBins[1:] +timeBins[:-1])
+timeErr  = 0.5*(timeBins[1:] -timeBins[:-1])
+timeX    = []
+timeXErr = []
+gainVal  = []
+gainErr  = []
+resVal   = []
+resErr   = []
 
 ctmp = ROOT.TCanvas()
 htmp = ROOT.TH1F("htmp", "htmp", 200, 0, 10000)
@@ -47,32 +54,43 @@ for i in xrange(Nbins):
         thecut +=  " && " + SmallSpotCut
     print i, thecut
     tt.Project("htmp", "fPHeight[0]", thecut)
-    htmp.Draw()
-    htmp.Fit("g0", "RNQ")
-    g = ROOT.TF1("g", "gaus", \
-                 g0.GetParameter(1) - nsigfit*g0.GetParameter(2),\
-                 g0.GetParameter(1) + nsigfit*g0.GetParameter(2))
-    htmp.Fit("g", "R")
-    gPeak  = g.GetParameter(1)
-    gSigma = g.GetParameter(2)
-    print gPeak, gSigma, "Eres=", gSigma/gPeak, "FWHM", 2.355*(gSigma/gPeak)
-    gainVal[i] = gPeak
-    gainErr[i] = g.GetParError(1)
-    resVal[i]  = 100.*gSigma/gPeak
-    #resErr[i]  = resVal[i]*np.sqrt((g.GetParError(1)/gPeak)**2 +\
-    #                               (g.GetParError(2)/gSigma )**2)
-    resErr[i]  = resVal[i]*(g.GetParError(2)/gSigma ) # ~ok for now
-    if useFWHM:
-        resVal[i] = resVal[i]*G2FWHM
-        resErr[i] = resErr[i]*G2FWHM
+    if htmp.GetEntries() >= minEvtInHist:
+        htmp.Draw()
+        htmp.Fit("g0", "RNQ")
+        g = ROOT.TF1("g", "gaus", \
+                     g0.GetParameter(1) - nsigfit*g0.GetParameter(2),\
+                     g0.GetParameter(1) + nsigfit*g0.GetParameter(2))
+        htmp.Fit("g", "R")
+        timeX.append(timeVal[i])
+        timeXErr.append(timeErr[i])
+        gPeak  = g.GetParameter(1)
+        gSigma = g.GetParameter(2)
+        print gPeak, gSigma, "Eres=", gSigma/gPeak, "FWHM", 2.355*(gSigma/gPeak)
+        gainVal.append(gPeak)
+        gainErr.append(g.GetParError(1))
+        resVal.append(100.*gSigma/gPeak)
+        #resErr[i]  = resVal[i]*np.sqrt((g.GetParError(1)/gPeak)**2 +\
+            #                               (g.GetParError(2)/gSigma )**2)
+        resErr.append(resVal[-1]*(g.GetParError(2)/gSigma )) # ~ok for now
+        if useFWHM:
+            resVal[-1] = resVal[-1]*G2FWHM
+            resErr[-1] = resErr[-1]*G2FWHM
 
     ROOT.gPad.Update()
     #raw_input("inspect and pres enter")
 
+
+timeX    = np.array(timeX)
+timeXErr = np.array(timeXErr)
+gainVal  = np.array(gainVal)
+gainErr  = np.array(gainErr)
+resVal   = np.array(resVal)
+resErr   = np.array(resErr)
+N        = len(timeX)
 cTrend = ROOT.TCanvas("gaintrend_%s" %Label,"gaintrend_%s" %Label,1000,700)
 cTrend.Divide(1,2)
 cTrend.cd(1)
-gGain = ROOT.TGraphErrors(Nbins, timeVal*3600, gainVal, timeErr*3600, gainErr)
+gGain = ROOT.TGraphErrors(N, timeX*3600, gainVal, timeXErr*3600, gainErr)
 gGain.SetMarkerStyle(20)
 gGain.SetTitle("Gain (gaussian peak) @ 5.9 keV (Fe55)")
 gGain.GetYaxis().SetTitle("Peak")
@@ -83,7 +101,7 @@ gGain.GetXaxis().SetTimeOffset(TimeOffset)
 gGain.GetXaxis().SetLabelOffset(0.03)
 gGain.Draw("ap")
 cTrend.cd(2)
-gRes = ROOT.TGraphErrors(Nbins, timeVal, resVal, timeErr, resErr)
+gRes = ROOT.TGraphErrors(N, timeX, resVal, timeXErr, resErr)
 gRes.SetMarkerStyle(20)
 gRes.SetTitle("Resolution (gaussian sigma/peak) @ 5.9 keV (Fe55)")
 if useFWHM:
@@ -92,3 +110,4 @@ gRes.GetXaxis().SetTitle("Elapsed Time (hours)")
 gRes.GetYaxis().SetTitle("#Delta E/E (%)")
 gRes.Draw("ap")
 
+ROOT.gPad.Update()
