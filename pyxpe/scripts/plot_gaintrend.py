@@ -3,6 +3,7 @@
 
 import ROOT
 import numpy as np
+ROOT.gStyle.SetOptFit(1)
 ROOT.gStyle.SetPadGridX(True)
 ROOT.gStyle.SetPadGridY(True)
 G2FWHM = 2.3548200450309493
@@ -10,7 +11,7 @@ G2FWHM = 2.3548200450309493
 tt = ROOT.TChain("tree")
 # SELECT RUNS to be analized
 for runid in [393, 394, 395, 396, 397, 398, 399, 400, 
-              401, 402, 403, 406, 407, 408]:
+              401, 402, 403, 406, 407, 408, 409, 410, 411, 412, 413, 414, 415]:
     tt.Add("/data0/xpe/xpedata/002_%07d/002_%07d_data_TH5.root" %(runid, runid))
 # Note:
 # 1 night gap between run 400 (timeout at 20:11 1/7) and 402 (start 9:37 2/7)
@@ -18,7 +19,7 @@ for runid in [393, 394, 395, 396, 397, 398, 399, 400,
 
 # SELECT OPTIONS
 Label      = 'GPD018_fill1'
-TimeBin    = 0.5 #hours
+TimeBin    = 3. #hours
 nsigfit    = 1.5
 CUT        = "(fNClusters==1)"
 dh         = ROOT.TDatime(2016,6,30,10,56,21) # started on Jun 30 10:56:21 2016
@@ -27,7 +28,7 @@ TimeHours  = "((fTimeStamp-%.1f)/3600.)" % TimeOffset
 minEvtInHist = 500
 useFWHM      = False
 useSmallSpot = True
-SmallSpotCut = "((fImpactY[0]-0)**2 + (fImpactX[0]-0.5)**2)<(1**2)"
+SmallSpotCut = "((fImpactY[0]-0)**2 + (fImpactX[0]-0.5)**2)<(1.**2)" # max 2.5 to avoid bad chan area
 
 minTime   = (tt.GetMinimum("fTimeStamp")-TimeOffset)/3600.
 maxTime   = (tt.GetMaximum("fTimeStamp")-TimeOffset)/3600.
@@ -46,8 +47,9 @@ resVal   = []
 resErr   = []
 
 ctmp = ROOT.TCanvas()
+ctmp.Print("tmpAllHisto.ps[");
 htmp = ROOT.TH1F("htmp", "htmp", 200, 0, 10000)
-g0 = ROOT.TF1("g0", "gaus", 3000, 4500)
+g0 = ROOT.TF1("g0", "gaus", 3000, 5000)
 for i in xrange(Nbins):
     TimeCut = "(%s>=%f && %s <%f)" % \
               (TimeHours, timeBins[i], TimeHours, timeBins[i+1])
@@ -79,9 +81,10 @@ for i in xrange(Nbins):
             resErr[-1] = resErr[-1]*G2FWHM
 
     ROOT.gPad.Update()
+    ctmp.Print("tmpAllHisto.ps");
     #raw_input("inspect and pres enter")
 
-
+ctmp.Print("tmpAllHisto.ps]");
 timeX    = np.array(timeX)
 timeXErr = np.array(timeXErr)
 gainVal  = np.array(gainVal)
@@ -103,6 +106,13 @@ gGain.GetXaxis().SetTimeFormat("#splitline{%d/%m/%y}{%H:%M:%S}");
 gGain.GetXaxis().SetTimeOffset(TimeOffset)
 gGain.GetXaxis().SetLabelOffset(0.03)
 gGain.Draw("ap")
+gGain.Fit("pol1")
+ROOT.gPad.Update()
+psGain = gGain.GetListOfFunctions().FindObject("stats");
+psGain.SetX1NDC(0.65);
+psGain.SetY1NDC(0.18);
+psGain.SetX2NDC(0.87);
+psGain.SetY2NDC(0.34);
 cTrend.cd(2)
 gRes = ROOT.TGraphErrors(N, timeX, resVal, timeXErr, resErr)
 gRes.SetMarkerStyle(20)
@@ -112,5 +122,12 @@ if useFWHM:
 gRes.GetXaxis().SetTitle("Elapsed Time (hours)")
 gRes.GetYaxis().SetTitle("#Delta E/E (%)")
 gRes.Draw("ap")
+gRes.Fit("pol1")
+ROOT.gPad.Update()
+psRes = gRes.GetListOfFunctions().FindObject("stats");
+psRes.SetX1NDC(0.65);
+psRes.SetY1NDC(0.18);
+psRes.SetX2NDC(0.87);
+psRes.SetY2NDC(0.34);
 
 ROOT.gPad.Update()
