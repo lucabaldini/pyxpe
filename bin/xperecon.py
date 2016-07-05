@@ -23,9 +23,9 @@ __description__ = 'Run the XPE reconstruction'
 
 
 import os
-from pyxpe.logging_ import startmsg
-from pyxpe.xpol import XPOL_COORDINATE_SYSTEMS
-from pyxpe.recon import run_pixy
+from pyxpe.utils.logging_ import startmsg
+from pyxpe.recon.xpol import XPOL_COORDINATE_SYSTEMS
+from pyxpe.recon.recon import run_pixy
 
 
 """Command-line switches.

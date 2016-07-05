@@ -21,10 +21,10 @@
 
 import ROOT
 
-from pyxpe.binio import xpeBinaryFileWindowed
-from pyxpe.rootio import xpePixyTree
-from pyxpe.clustering import hierarchical_clustering
-from pyxpe.logging_ import logger
+from pyxpe.recon.binio import xpeBinaryFileWindowed
+from pyxpe.recon.rootio import xpePixyTree
+from pyxpe.recon.clustering import hierarchical_clustering
+from pyxpe.utils.logging_ import logger
 
 
 def run_pixy(file_path, num_events=1000000000, zero_suppression=9,

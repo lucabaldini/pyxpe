@@ -19,13 +19,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-from pyxpe.logging_ import logger
+from pyxpe.utils.logging_ import logger
 
 import struct
 import numpy
 
-from pyxpe.event import xpeEventWindowed, xpeEventFullFrame
-from pyxpe.xpol  import XPOL_NUM_PIXELS, XPOL_NUM_BUFFERS, XPOL_PIXELS_PER_BUFFER
+from pyxpe.recon.event import xpeEventWindowed, xpeEventFullFrame
+from pyxpe.recon.xpol  import XPOL_NUM_PIXELS, XPOL_NUM_BUFFERS,\
+    XPOL_PIXELS_PER_BUFFER
 
 
 class xpeBinaryFileBase(file):

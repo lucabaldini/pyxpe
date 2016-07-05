@@ -19,7 +19,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-from pyxpe.logging_ import logger
+from pyxpe.utils.logging_ import logger
 
 import struct
 import numpy
@@ -27,7 +27,7 @@ import numpy
 import matplotlib
 import matplotlib.pyplot as plt
 
-from pyxpe.xpol import xpeHexagonalMatrix, pixel2world
+from pyxpe.recon.xpol import xpeHexagonalMatrix, pixel2world
 
 
 

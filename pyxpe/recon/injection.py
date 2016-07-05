@@ -23,9 +23,9 @@ import numpy
 import matplotlib.pyplot as plt
 from scipy.sparse import lil_matrix
 
-from pyxpe.binio import xpeBinaryFileWindowed
-from pyxpe.logging_ import logger
-from pyxpe.utils import xpeChrono
+from pyxpe.recon.binio import xpeBinaryFileWindowed
+from pyxpe.utils.logging_ import logger
+from pyxpe.utils.profile import xpeChrono
 
 
 def mean_variance(file_path, num_events):
