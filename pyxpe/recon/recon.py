@@ -23,7 +23,7 @@ import ROOT
 import numpy
 
 from pyxpe.recon.binio import xpeBinaryFileWindowed
-from pyxpe.recon.rootio import xpePixyTree
+from pyxpe.recon.rootio import xpePixyTree, xpeReconTree
 from pyxpe.recon.clustering import hierarchical_clustering
 from pyxpe.recon.geometry import xpePoint2d, xpeRay2d
 from pyxpe.utils.logging_ import logger
@@ -194,10 +194,14 @@ class xpePixyRecon:
         if abs(self.phi1 - self.phi0) > 0.5*numpy.pi:
             self.phi1 -= numpy.pi*numpy.sign(self.phi1)
 
-    def __str__(self):
-        """Terminal formatting.
-        """
-        pass
+
+
+class xpeRecon(xpePixyRecon):
+
+    """Subclass for playing around with the recon stuff.
+    """
+
+    pass
 
 
 
@@ -209,7 +213,7 @@ def run_pixy_recon(file_path, num_events=1000000000, zero_suppression=9,
     """
     assert(file_path.endswith('.mdat'))
     if output_path is None:
-        output_path = file_path.replace('.mdat', '.root')
+        output_path = file_path.replace('.mdat', '_pixy.root')
     logger.info('Opening output file %s...' % output_path)
     output_file = ROOT.TFile(output_path, 'RECREATE')
     output_tree = xpePixyTree()
@@ -251,3 +255,53 @@ def run_pixy_recon(file_path, num_events=1000000000, zero_suppression=9,
                 num_proc_events)
     return output_path
         
+
+def run_xpe_recon(file_path, num_events=1000000000, zero_suppression=9,
+                  coordinate_system='pixy', output_path=None,
+                  min_cluster_size=6, max_cluster_size=400,
+                  small_radius=1.5, large_radius=3.5, weight_scale=0.05):
+    """Run the event reconstruction on a binary file.
+    """
+    assert(file_path.endswith('.mdat'))
+    if output_path is None:
+        output_path = file_path.replace('.mdat', '_xpe.root')
+    logger.info('Opening output file %s...' % output_path)
+    output_file = ROOT.TFile(output_path, 'RECREATE')
+    output_tree = xpeReconTree()
+    event_id = 0
+    for event in xpeBinaryFileWindowed(file_path):
+        cluster_list = hierarchical_clustering(event, zero_suppression,
+                                               coordinate_system)
+        cluster = cluster_list[0]
+        recon = xpePixyRecon(cluster)
+        if not recon.error_summary:
+            output_tree.set_value('fRunId', -1)
+            output_tree.set_value('fEventId', event_id)
+            output_tree.set_value('fNClusters', len(cluster_list))
+            output_tree.set_value('fTrigWindow', event.num_pixels())
+            output_tree.set_value('fTimeTick', -1)
+            output_tree.set_value('fTimeStamp', -1)
+            output_tree.set_value('fBufferId', event.buffer_id)
+            output_tree.set_value('fCluSize', cluster.num_pixels())
+            output_tree.set_value('fPHeight', cluster.pulse_height)
+            output_tree.set_value('fStoN', -1)
+            output_tree.set_value('fTotNoise', -1)
+            output_tree.set_value('fBaricenterX', cluster.baricenter.x())
+            output_tree.set_value('fBaricenterY', cluster.baricenter.y())
+            output_tree.set_value('fTheta0', recon.phi0)
+            output_tree.set_value('fTheta1', recon.phi1)
+            output_tree.set_value('fMomX', recon.ma0.mom2_long)
+            output_tree.set_value('fMomY', recon.ma0.mom2_trans)
+            output_tree.set_value('fMomThirdX', recon.mom3_long)
+            output_tree.set_value('fImpactX', recon.conversion_baricenter.x())
+            output_tree.set_value('fImpactY', recon.conversion_baricenter.y())
+            output_tree.Fill()
+        event_id += 1
+        if event_id == num_events:
+            break
+    num_proc_events = output_tree.GetEntries()
+    output_tree.Write()
+    output_file.Close()
+    logger.info('Done, %d event(s) written to the output file.' %\
+                num_proc_events)
+    return output_path

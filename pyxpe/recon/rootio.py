@@ -155,6 +155,34 @@ class xpePixyTree(xpeRootTreeBase):
     ]
 
 
+class xpeReconTree(xpeRootTreeBase):
+
+    NAME = 'XpeRecon'
+    TITLE = 'Analized Data Tree'
+    BRANCHES = [
+        ('fRunId', 'i'),
+        ('fEventId', 'I'),
+        ('fNClusters', 'I'),
+        ('fTrigWindow', 'I'),
+        ('fTimeTick', 'l'),
+        ('fTimeStamp', 'D'),
+        ('fBufferId', 'I'),
+        ('fCluSize', 'I'),
+        ('fPHeight', 'F'),
+        ('fStoN', 'F'),
+        ('fTotNoise', 'F'),
+        ('fBaricenterX', 'F'),
+        ('fBaricenterY', 'F'),
+        ('fTheta0', 'F'),
+        ('fTheta1', 'F'),
+        ('fMomX', 'F'),
+        ('fMomY', 'F'),
+        ('fMomThirdX', 'F'),
+        ('fImpactX', 'F'),
+        ('fImpactY', 'F')
+    ]    
+
+
 
 def test():
     """ Test code.
