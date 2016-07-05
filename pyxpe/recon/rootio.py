@@ -83,13 +83,13 @@ class xpeRootTreeBase(ROOT.TTree):
         ROOT.TTree.__init__(self, self.NAME, self.TITLE)
         self.__array_dict = {}
         for branch_name, branch_type in self.BRANCHES:
-            self.addBranch(branch_name, branch_type)
+            self.add_branch(branch_name, branch_type)
         self.branch_list = [item[0] for item in self.BRANCHES]
         for key, value in self.ALIAS_DICT.items():
             logger.info('Setting alias "%s" -> "%s"...' % (key, value))
             self.SetAlias(key, value)
 
-    def addBranch(self, branch_name, branch_type):
+    def add_branch(self, branch_name, branch_type):
         """ Add a branch to the output tree.
         """
         branchTitle = '%s/%s' % (branch_name, branch_type)
@@ -110,10 +110,10 @@ class xpeRootTreeBase(ROOT.TTree):
         superset of the branch names as its keys.)
         """
         for branch_name in self.branch_list:
-            self.setValue(branch_name, entry_dict[branch_name])
+            self.set_value(branch_name, entry_dict[branch_name])
         self.Fill()
 
-    def setValue(self, branch_name, value):
+    def set_value(self, branch_name, value):
         """ Set the value of a specific array.
         """
         self.__array_dict[branch_name][0] = value
@@ -160,11 +160,11 @@ def test():
     """ Test code.
     """
     t = xpeRootTree()
-    t.addBranch('Var1', 'I')
-    t.addBranch('Var2', 'F')
+    t.add_branch('Var1', 'I')
+    t.add_branch('Var2', 'F')
     for i in range(10):
-        t.setValue('Var1', i)
-        t.setValue('Var2', i**0.5)
+        t.set_value('Var1', i)
+        t.set_value('Var2', i**0.5)
         t.Fill()
     t.Draw('Var2')
     raw_input('Press enter to exit')
