@@ -22,7 +22,7 @@
 import ROOT
 import numpy
 
-from pyxpe.logging_ import logger
+from pyxpe.utils.logging_ import logger
 
 
 ROOT_TO_NUMPY_DICT = {'C': '',

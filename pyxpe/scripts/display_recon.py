@@ -23,10 +23,10 @@ import numpy
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse, Circle, Wedge
 
-from pyxpe.binio import xpeBinaryFileWindowed
-from pyxpe.clustering import hierarchical_clustering
-from pyxpe.geometry import xpeRay2d
-from pyxpe.logging_ import logger
+from pyxpe.recon.binio import xpeBinaryFileWindowed
+from pyxpe.recon.clustering import hierarchical_clustering
+from pyxpe.recon.geometry import xpeRay2d
+from pyxpe.utils.logging_ import logger
 
 
 def annotate(text, pos, text_pos, text_size=15, color='gray',

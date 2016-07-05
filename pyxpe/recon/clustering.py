@@ -22,9 +22,9 @@
 import numpy
 import matplotlib.pyplot as plt
 
-from pyxpe.xpol import XPOL_COLUMN_PITCH
-from pyxpe.geometry import xpePoint2d, xpeRay2d
-from pyxpe.xpol import xpeHexagonCollection, adc2colors
+from pyxpe.recon.xpol import XPOL_COLUMN_PITCH
+from pyxpe.recon.geometry import xpePoint2d, xpeRay2d
+from pyxpe.recon.xpol import xpeHexagonCollection, adc2colors
 
 
 
@@ -356,7 +356,7 @@ def hierarchical_clustering(event, zero_suppression, coordinate_system,
 def test(filePath, num_events, zero_suppression=9, coordinate_system='xpedaq'):
     """
     """
-    from pyxpe.binio import xpeBinaryFileWindowed
+    from pyxpe.recon.binio import xpeBinaryFileWindowed
     input_file = xpeBinaryFileWindowed(filePath)
     for i in xrange(num_events):
         event = input_file.next()
