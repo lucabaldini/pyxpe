@@ -13,8 +13,8 @@ tt = ROOT.TChain("tree")
 for runid in [393, 394, 395, 396, 397, 398, 399, 400,
               401, 402, 403, 406, 407, 408, 409, 410, 
               411, 412, 413, 414, 415, 416,
-              417, 418, 420, 421, 422, 423, 424]:
-    tt.Add("/data0/xpe/xpedata/002_%07d/002_%07d_data_TH5.root" %(runid, runid))
+              417, 418, 420, 421, 422, 423, 424, 425]:
+    tt.Add("/data1/xpe/xpedata/002_%07d/002_%07d_data_TH5.root" %(runid, runid))
 # Note:
 # 1 night gap between run 400 (timeout at 20:11 1/7) and 402 (start 9:37 2/7)
 # 402 ends with timeout, 403 started after ~1 hr -- 403 is very small
@@ -23,9 +23,9 @@ for runid in [393, 394, 395, 396, 397, 398, 399, 400,
 
 # SELECT OPTIONS
 Label      = 'GPD018_fill1'
-TimeBin    = 3. #hours
+TimeBin    = 4. #hours
 nsigfit    = 1.8
-CUT        = "(1)"
+CUT        = "(1)" #"(fNClusters==1)"
 dh         = ROOT.TDatime(2016,6,30,10,56,21) # started on Jun 30 10:56:21 2016
 TimeOffset = dh.Convert()
 TimeHours  = "((fTimeStamp-%.1f)/3600.)" % TimeOffset
@@ -66,7 +66,7 @@ hAll.Draw("colz")
 ctmp.Print("tmpAllHisto.ps");
 #raw_input("E2go")
 
-g0 = ROOT.TF1("g0", "gaus", 3000, 5000)
+g0 = ROOT.TF1("g0", "gaus", 3000, 5500)
 for i in xrange(Nbins):
     # get projection in time (y coord in hAll)
     htmp = hAll.ProjectionX("htmp", i+1,i+1)
