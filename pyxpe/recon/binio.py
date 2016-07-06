@@ -84,7 +84,8 @@ class xpeBinaryFileFullFrame(xpeBinaryFileBase):
         We should return an event object instead of a plain numpy array.
         """
         data = self.read_words(XPOL_NUM_PIXELS )
-        adc_counts = numpy.array(data)#.reshape(XPOL_NUM_BUFFERS, XPOL_PIXELS_PER_BUFFER)
+        adc_counts = numpy.array(data)
+        #.reshape(XPOL_NUM_BUFFERS, XPOL_PIXELS_PER_BUFFER)
         return adc_counts
             
 
@@ -102,8 +103,14 @@ class xpeBinaryFileWindowed(xpeBinaryFileBase):
         except Exception:
             raise StopIteration()
         if header != xpeEventWindowed.HEADER_MARKER:
-            logger.error('Event header mismatch (got %s).' % hex(header))
-            raise StopIteration()
+            msg = 'Event header mismatch at byte %d' % self.tell()
+            msg += ' (expected %s, got %s).' %\
+                   (hex(xpeEventWindowed.HEADER_MARKER), hex(header))
+            logger.error(msg)
+            logger.info('Moving ahead to the next event header...')
+            while header != xpeEventWindowed.HEADER_MARKER:
+                header = self.read_word()
+            logger.info('Got back in synch at byte %d.' % self.tell())
         xmin, xmax, ymin, ymax, buf_id, t1, t2, s1, s2 = self.read_words(9)
         num_columns = (xmax - xmin + 1)
         num_rows = (ymax - ymin + 1)

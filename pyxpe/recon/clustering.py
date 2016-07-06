@@ -46,13 +46,6 @@ class xpeCluster:
         _x = numpy.sum(self.x*self.adc_values)/self.pulse_height
         _y = numpy.sum(self.y*self.adc_values)/self.pulse_height
         self.baricenter = xpePoint2d(_x, _y)
-        if self.num_pixels() > 2:
-            # Run a first moments analysis with all the pixels.
-            self.phi0, self.mom2_long,\
-                self.mom2_trans = self.do_moments_analysis(self.baricenter)
-            self.axis0 = xpeRay2d(self.baricenter, self.phi0)
-            # Run the "standard" Pixy reconstruction.
-            self.do_pixy_recon()
             
     def num_pixels(self):
         """Return the cluster size.
@@ -64,105 +57,6 @@ class xpeCluster:
         """
         return other.pulse_height - self.pulse_height
 
-    def do_moments_analysis(self, pivot, weights=1.):
-        """Run a two-dimensional moments analysis on the cluster.
-        
-        Args
-        ----
-        pivot : xpePoint2d instance
-            The pivot point for the moments analysis (by defaults is the
-            baricenter of the cluster).
-
-        weights : array
-            A set of weights for the moments analysis (default to 1---these
-            are multiplied by the pixel ADC counts).
-        """
-        w = self.adc_values*weights
-        wsum = numpy.sum(w)
-        # Calculate the offsets with respect to the pivot.
-        dx = (self.x - pivot.x())
-        dy = (self.y - pivot.y())
-        # Solve for the angle of the principal axis (note that at this point
-        # phi is comprised between -pi/2 and pi/2 and might indicate either
-        # the major or the minor axis of the tensor of inertia).
-        A = numpy.sum(dx*dy*w)
-        B = numpy.sum((dy**2. - dx**2.)*w)
-        phi = -0.5*numpy.arctan2(2.*A, B)
-        # Rotate by an angle phi and calculate the eigenvalues of the tensor
-        # of inertia.
-        xp = numpy.cos(phi)*dx + numpy.sin(phi)*dy
-        yp = -numpy.sin(phi)*dx + numpy.cos(phi)*dy
-        mom2_long = numpy.sum((xp**2.)*w)/wsum
-        mom2_trans = numpy.sum((yp**2.)*w)/wsum
-        # We want mom2_long to be the highest eigenvalue, so we need to
-        # check wheteher we have to swap the eigenvalues, here. Note that
-        # at this point phi is still comprised between -pi/2 and pi/2.
-        if mom2_long < mom2_trans:
-            mom2_long, mom2_trans = mom2_trans, mom2_long
-            phi -= 0.5*numpy.pi*numpy.sign(phi)
-        # Return the results of the moments analysis.
-        return phi, mom2_long, mom2_trans
-
-    def do_pixy_recon(self, small_radius=1.5, large_radius=3.5,
-                      weight_scale=0.05):
-        """Run the second part of the Pixy reconstruction, i.e., that were we
-        compute the conversion point and the second-step reconstructed
-        direction.
-        """
-        # Initialize a few variables.
-        self.conversion_point = self.baricenter
-        self.conversion_baricenter = self.baricenter
-        self.phi1 = self.phi0
-        self.axis1 = self.axis0
-        # Calculate the third moment along the principal axis of the charge
-        # distribution.
-        self.mom3_long = self.momentum(3, self.baricenter, self.phi0)
-        if self.mom3_long == 0:
-            return
-        # Calculate the distances from the baricenter in units of the
-        # longitudinal rms of the charge distribution.
-        dx = (self.x - self.baricenter.x())
-        dy = (self.y - self.baricenter.y())
-        d = numpy.sqrt(dx**2 + dy**2)/numpy.sqrt(self.mom2_long)
-        # Calculate the projection of the pixels along the major axis.
-        xp = numpy.cos(self.phi0)*dx + numpy.sin(self.phi0)*dy
-        # Select all the pixels whose distance from the baricenter is
-        # comprised withing the two radii (small and large) and are lying
-        # on the "right" side (i.e., that indicated by the third moment).
-        _mask = (d > small_radius)*(d < large_radius)*(xp/self.mom3_long > 0.)
-        _adc = self.adc_values[_mask]
-        _adc_sum = float(numpy.sum(_adc))
-        # Calculate the center of mass of the selected pixels---this is the
-        # reconstructed conversion point.
-        if _adc_sum == 0:
-            return 
-        _x = numpy.sum(self.x[_mask]*_adc)/_adc_sum
-        _y = numpy.sum(self.y[_mask]*_adc)/_adc_sum
-        self.conversion_point = xpePoint2d(_x, _y)
-        # And now we can assign a direction to the original axis, based on the
-        # sign of the third moment. (Note that we could have done this right
-        # at the beginning, but that would have changed the logic of the
-        # conversion point calculation, and this implementation is adherent
-        # to the original code in Pixy).
-        if self.mom3_long > 0:
-            self.phi0 -= numpy.pi*numpy.sign(self.phi0)
-        # And now the second moments analysis (need to wrap all this into a
-        # single call to the do_moments_analysis() method).
-        dx = (self.x - self.conversion_point.x())
-        dy = (self.y - self.conversion_point.y())
-        d = numpy.sqrt(dx**2 + dy**2)
-        w = numpy.exp(-d/weight_scale)
-        _adc_sum = float(numpy.sum(self.adc_values*w))
-        _x = numpy.sum(self.x*self.adc_values*w)/_adc_sum
-        _y = numpy.sum(self.y*self.adc_values*w)/_adc_sum
-        self.conversion_baricenter = xpePoint2d(_x, _y)
-        phi, mom2_long,\
-            mom2_trans = self.do_moments_analysis(self.conversion_baricenter, w)
-        self.phi1 = phi
-        if abs(self.phi1 - self.phi0) > 0.5*numpy.pi:
-            self.phi1 -= numpy.pi*numpy.sign(self.phi1)
-        self.axis1 = xpeRay2d(self.conversion_point, self.phi1)
-
     def projection1d(self, pivot, phi):
         """Project the charge distribution on the ray passing by the pivot
         point at an angle phi, and return the corresponding one-dimensional
@@ -171,7 +65,7 @@ class xpeCluster:
         return numpy.cos(phi)*(self.x - pivot.x()) +\
             numpy.sin(phi)*(self.y - pivot.y())
 
-    def momentum(self, order, pivot, phi):
+    def moment(self, order, pivot, phi):
         """Calculate the nth-order moment of the 1-dimensional charge
         distribution projected on a given ray.
         """
@@ -179,7 +73,7 @@ class xpeCluster:
         return numpy.sum((xp**order)*self.adc_values)/self.pulse_height
 
     def fit_spline(self, zero_suppression=25):
-        """
+        """To be moved into recon.
         """
         from scipy.interpolate import UnivariateSpline
         _mask = self.adc_values >= zero_suppression
@@ -201,7 +95,7 @@ class xpeCluster:
         plt.plot(x, y, '-', lw=2, color='black')
 
     def fit_spine(self, num_nodes=7):
-        """Just playing around.
+        """Just playing around. To be moved into recon.
 
         Warning
         -------
@@ -233,7 +127,7 @@ class xpeCluster:
 
     def draw(self, coordinate_system, color_map='Reds', hexcol_padding=0.1,
              text=True, show=True):
-        """Draw the cluster.
+        """Draw the cluster. To be moved into a separate module.
         """
         hit_positions = numpy.vstack((self.x, self.y),).transpose()
         colors = adc2colors(self.adc_values, 0, color_map)
@@ -257,11 +151,11 @@ class xpeCluster:
         plt.xlabel('x [mm]')
         plt.ylabel('y [mm]')
         self.baricenter.draw()
-        self.axis0.draw()
-        self.conversion_point.draw()
+        #self.axis0.draw()
+        #self.conversion_point.draw()
         #self.conversion_baricenter.draw()
-        self.axis1.draw()
-        self.fit_spline()
+        #self.axis1.draw()
+        #self.fit_spline()
         if show:
             plt.show()
         return fig
