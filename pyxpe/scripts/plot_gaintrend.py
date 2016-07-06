@@ -10,20 +10,22 @@ G2FWHM = 2.3548200450309493
 
 tt = ROOT.TChain("tree")
 # SELECT RUNS to be analized
-for runid in [393, 394, 395, 396, 397, 398, 399, 400, 
+for runid in [393, 394, 395, 396, 397, 398, 399, 400,
               401, 402, 403, 406, 407, 408, 409, 410, 
-              411, 412, 413, 414, 415, 416]:
+              411, 412, 413, 414, 415, 416,
+              417, 418, 420, 421, 422, 423, 424]:
     tt.Add("/data0/xpe/xpedata/002_%07d/002_%07d_data_TH5.root" %(runid, runid))
 # Note:
 # 1 night gap between run 400 (timeout at 20:11 1/7) and 402 (start 9:37 2/7)
 # 402 ends with timeout, 403 started after ~1 hr -- 403 is very small
 # 1 night gap between run 416 (timeout at 21:15 4/7) and 417 (start 9:13 5/7)
+# 418 interrupted by mistake (low voltage turnoff), skip 419.
 
 # SELECT OPTIONS
 Label      = 'GPD018_fill1'
 TimeBin    = 3. #hours
-nsigfit    = 1.5
-CUT        = "(fNClusters==1)"
+nsigfit    = 1.8
+CUT        = "(1)"
 dh         = ROOT.TDatime(2016,6,30,10,56,21) # started on Jun 30 10:56:21 2016
 TimeOffset = dh.Convert()
 TimeHours  = "((fTimeStamp-%.1f)/3600.)" % TimeOffset
@@ -145,4 +147,4 @@ psRes.SetX1NDC(0.65);
 psRes.SetY1NDC(0.18);
 psRes.SetX2NDC(0.87);
 psRes.SetY2NDC(0.34);
-ROOT.gPad.Update()
+cTrend.Update()
