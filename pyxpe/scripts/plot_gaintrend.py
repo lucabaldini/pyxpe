@@ -14,7 +14,7 @@ for runid in [393, 394, 395, 396, 397, 398, 399, 400,
               401, 402, 403, 406, 407, 408, 409, 410, 
               411, 412, 413, 414, 415, 416,
               417, 418, 420, 421, 422, 423, 424, 425, 426, 427, 428,
-              432, 433]:
+              432, 433, 434, 435, 436]:
     tt.Add("/data1/xpe/xpedata/002_%07d/002_%07d_data_TH5.root" %(runid, runid))
 # Note:
 # 1 night gap between run 400 (timeout at 20:11 1/7) and 402 (start 9:37 2/7)
@@ -118,8 +118,8 @@ for i in xrange(Nbins):
         timeXErr.append(timeErr[i])
         gPeak  = g.GetParameter(1)
         gSigma = g.GetParameter(2)
-        print i, gPeak, gSigma, "Eres=", gSigma/gPeak, \
-            "FWHM", 2.355*(gSigma/gPeak), "\n"
+        print  "\n",i, gPeak, gSigma, "Eres=", gSigma/gPeak, \
+            "FWHM", 2.355*(gSigma/gPeak)
         gainVal.append(gPeak)
         gainErr.append(g.GetParError(1))
         resVal.append(100.*gSigma/gPeak)
@@ -189,9 +189,9 @@ fRes.SetParameters(0.1, 0.001)
 gRes.Fit("fRes", "R")
 ROOT.gPad.Update()
 psRes = gRes.GetListOfFunctions().FindObject("stats");
-psRes.SetX1NDC(0.52);
+psRes.SetX1NDC(0.33);
 psRes.SetY1NDC(0.64);
-psRes.SetX2NDC(0.74);
+psRes.SetX2NDC(0.54);
 psRes.SetY2NDC(0.80);
 cTrend.Update()
 if split_time_flag:
