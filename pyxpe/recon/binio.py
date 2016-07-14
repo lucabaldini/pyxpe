@@ -24,15 +24,10 @@ from pyxpe.utils.logging_ import logger
 import struct
 import numpy
 
-<<<<<<< HEAD:pyxpe/binio.py
 from pyxpe.event import xpeEventWindowed, xpeEventFullFrame
 from pyxpe.xpol import XPOL_NUM_PIXELS, XPOL_NUM_COLUMNS, XPOL_NUM_ROWS
 from pyxpe.xpol import XPOL_PIXELS_PER_BUFFER, XPOL_NUM_BUFFERS
-=======
-from pyxpe.recon.event import xpeEventWindowed, xpeEventFullFrame
-from pyxpe.recon.xpol  import XPOL_NUM_PIXELS, XPOL_NUM_BUFFERS,\
-    XPOL_PIXELS_PER_BUFFER
->>>>>>> 745f9ce4134e0c8c0ed39b79e9e155f2d8b725d1:pyxpe/recon/binio.py
+
 
 
 class xpeBinaryFileBase(file):
@@ -88,8 +83,7 @@ class xpeBinaryFileFullFrame(xpeBinaryFileBase):
         Warning
         -------
         We should return an event object instead of a plain numpy array.
-        """
-<<<<<<< HEAD:pyxpe/binio.py
+        """x
         data = self.read_words(XPOL_NUM_PIXELS)
         adc_counts = numpy.array(data, numpy.uint16)
         adc_counts = adc_counts.reshape(XPOL_PIXELS_PER_BUFFER,
@@ -97,11 +91,6 @@ class xpeBinaryFileFullFrame(xpeBinaryFileBase):
         adc_counts = adc_counts.transpose()
         adc_counts = adc_counts.flatten()
         adc_counts = adc_counts.reshape(XPOL_NUM_ROWS, XPOL_NUM_COLUMNS)
-=======
-        data = self.read_words(XPOL_NUM_PIXELS )
-        adc_counts = numpy.array(data)
-        #.reshape(XPOL_NUM_BUFFERS, XPOL_PIXELS_PER_BUFFER)
->>>>>>> 745f9ce4134e0c8c0ed39b79e9e155f2d8b725d1:pyxpe/recon/binio.py
         return adc_counts
             
 
