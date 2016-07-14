@@ -45,7 +45,7 @@ def pixel2world_xpedaq(col, row):
     to bottom.
     """
     _x = (col - 0.5*(row % 2))*XPOL_COLUMN_PITCH
-    _y = -row*XPOL_ROW_PITCH
+    _y = row*XPOL_ROW_PITCH
     return (_x, _y)
 
 
@@ -111,7 +111,7 @@ class xpeHexagonCollection(collections.RegularPolyCollection):
     """Specialized collections.RegularPolyCollection with `numsides` set to 6.
     """
 
-    def __init__(self, padding=0.1, **kwargs):
+    def __init__(self, padding=0.1, fig=None, subplot=111, **kwargs):
         """Constructor.
         """
         offsets = kwargs.get('offsets')
@@ -127,8 +127,9 @@ class xpeHexagonCollection(collections.RegularPolyCollection):
         xmax += dx
         ymin -= dy
         ymax += dy
-        fig = plt.figure(figsize=(10, 10), dpi=80, facecolor='w')
-        ax = plt.subplot(111, aspect='equal', adjustable='box-forced')
+        if fig is None:
+            fig = plt.figure(figsize=(10, 10), dpi=80, facecolor='w')
+        ax = plt.subplot(subplot, aspect='equal', adjustable='box-forced')
         ax.set_xlim([xmin, xmax])
         ax.set_ylim([ymin, ymax])
         # Calculate a something proportional to the hexagon area in px**2.
@@ -214,17 +215,22 @@ class xpeHexagonalMatrix():
         f.close()
 
     def draw(self, adc_values=None, zero_suppression=0, text=True,
-             color_map='Reds', show=True):
+             color_map='Reds', grids=True, fig=None, subplot=111,
+             invert=False, show=True):
         """
         """
         if adc_values is not None:
             colors = adc2colors(adc_values, zero_suppression, color_map)
         else:
             colors = 'white'
-        hex_col = xpeHexagonCollection(offsets=self.pixel_positions(),
+        hex_col = xpeHexagonCollection(fig=fig, subplot=subplot,
+                                       offsets=self.pixel_positions(),
                                        edgecolors='gray', facecolors=colors)
         fig = hex_col.figure
-        plt.grid()
+        if invert:
+            plt.gca().invert_yaxis()
+        if grids:
+            plt.grid()
         if text and adc_values is not None:
             adc_ref = 0.5*adc_values.max()
             for (x, y), val in zip(self.pixel_positions(),
@@ -240,7 +246,7 @@ class xpeHexagonalMatrix():
         def _htxt(x, y, s, **kwargs):
             """
             """
-            return plt.text(x, y + 0.05, '%s' % s, horizontalalignment='center',
+            return plt.text(x, y - 0.06, '%s' % s, horizontalalignment='center',
                             verticalalignment='center', **kwargs)
 
         def _vtxt(x, y, s, **kwargs):
