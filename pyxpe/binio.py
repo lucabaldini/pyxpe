@@ -25,7 +25,8 @@ import struct
 import numpy
 
 from pyxpe.event import xpeEventWindowed, xpeEventFullFrame
-
+from pyxpe.xpol import XPOL_NUM_PIXELS, XPOL_NUM_COLUMNS, XPOL_NUM_ROWS
+from pyxpe.xpol import XPOL_PIXELS_PER_BUFFER, XPOL_NUM_BUFFERS
 
 
 class xpeBinaryFileBase(file):
@@ -82,8 +83,13 @@ class xpeBinaryFileFullFrame(xpeBinaryFileBase):
         -------
         We should return an event object instead of a plain numpy array.
         """
-        data = self.read_words(NUM_PIXELS)
-        adc_counts = numpy.array(data).reshape(NUM_BUFFERS, PIXELS_PER_BUFFER)
+        data = self.read_words(XPOL_NUM_PIXELS)
+        adc_counts = numpy.array(data, numpy.uint16)
+        adc_counts = adc_counts.reshape(XPOL_PIXELS_PER_BUFFER,
+                                        XPOL_NUM_BUFFERS)
+        adc_counts = adc_counts.transpose()
+        adc_counts = adc_counts.flatten()
+        adc_counts = adc_counts.reshape(XPOL_NUM_ROWS, XPOL_NUM_COLUMNS)
         return adc_counts
             
 
