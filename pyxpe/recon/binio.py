@@ -19,14 +19,20 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-from pyxpe.logging_ import logger
+from pyxpe.utils.logging_ import logger
 
 import struct
 import numpy
 
+<<<<<<< HEAD:pyxpe/binio.py
 from pyxpe.event import xpeEventWindowed, xpeEventFullFrame
 from pyxpe.xpol import XPOL_NUM_PIXELS, XPOL_NUM_COLUMNS, XPOL_NUM_ROWS
 from pyxpe.xpol import XPOL_PIXELS_PER_BUFFER, XPOL_NUM_BUFFERS
+=======
+from pyxpe.recon.event import xpeEventWindowed, xpeEventFullFrame
+from pyxpe.recon.xpol  import XPOL_NUM_PIXELS, XPOL_NUM_BUFFERS,\
+    XPOL_PIXELS_PER_BUFFER
+>>>>>>> 745f9ce4134e0c8c0ed39b79e9e155f2d8b725d1:pyxpe/recon/binio.py
 
 
 class xpeBinaryFileBase(file):
@@ -83,6 +89,7 @@ class xpeBinaryFileFullFrame(xpeBinaryFileBase):
         -------
         We should return an event object instead of a plain numpy array.
         """
+<<<<<<< HEAD:pyxpe/binio.py
         data = self.read_words(XPOL_NUM_PIXELS)
         adc_counts = numpy.array(data, numpy.uint16)
         adc_counts = adc_counts.reshape(XPOL_PIXELS_PER_BUFFER,
@@ -90,6 +97,11 @@ class xpeBinaryFileFullFrame(xpeBinaryFileBase):
         adc_counts = adc_counts.transpose()
         adc_counts = adc_counts.flatten()
         adc_counts = adc_counts.reshape(XPOL_NUM_ROWS, XPOL_NUM_COLUMNS)
+=======
+        data = self.read_words(XPOL_NUM_PIXELS )
+        adc_counts = numpy.array(data)
+        #.reshape(XPOL_NUM_BUFFERS, XPOL_PIXELS_PER_BUFFER)
+>>>>>>> 745f9ce4134e0c8c0ed39b79e9e155f2d8b725d1:pyxpe/recon/binio.py
         return adc_counts
             
 
@@ -107,8 +119,14 @@ class xpeBinaryFileWindowed(xpeBinaryFileBase):
         except Exception:
             raise StopIteration()
         if header != xpeEventWindowed.HEADER_MARKER:
-            logger.error('Event header mismatch (got %s).' % hex(header))
-            raise StopIteration()
+            msg = 'Event header mismatch at byte %d' % self.tell()
+            msg += ' (expected %s, got %s).' %\
+                   (hex(xpeEventWindowed.HEADER_MARKER), hex(header))
+            logger.error(msg)
+            logger.info('Moving ahead to the next event header...')
+            while header != xpeEventWindowed.HEADER_MARKER:
+                header = self.read_word()
+            logger.info('Got back in synch at byte %d.' % self.tell())
         xmin, xmax, ymin, ymax, buf_id, t1, t2, s1, s2 = self.read_words(9)
         num_columns = (xmax - xmin + 1)
         num_rows = (ymax - ymin + 1)
@@ -132,8 +150,16 @@ def open_binary_file(filePath):
         return xpeBinaryFileFullFrame(filePath)
 
     
+def test_fullframe(filePath, num_events):
+    """ scicazzi
+    """
+    input_file = xpeBinaryFileFullFrame(filePath)
+    for i in xrange(args.num_events):
+        event = input_file.next()
+        print event
+    return event
 
-    
+
 
 def test_windowed(filePath, num_events):
     """Read a windowed event file and display the events.
@@ -155,4 +181,5 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--num_events', type=int, default=10,
                         help = 'number of events to be processed')
     args = parser.parse_args()
-    test_windowed(args.infile, args.num_events)
+    #test_windowed(args.infile, args.num_events)
+    evt = test_fullframe(args.infile, args.num_events)
