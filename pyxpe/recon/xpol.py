@@ -33,10 +33,10 @@ XPOL_NUM_COLUMNS = 300
 XPOL_NUM_ROWS = 352
 XPOL_COLUMN_PITCH = 0.0500
 XPOL_ROW_PITCH = 0.0433
-XPOL_COORDINATE_SYSTEMS = ['xpedaq', 'pixy']
+XPOL_COORDINATE_SYSTEMS = ['xpol', 'xpe', 'pixy']
 
 
-def pixel2world_xpedaq(col, row):
+def pixel2world_xpol(col, row):
     """Convert from pixel coordinates to world coordinates.
     
     This is using the DAQ coordinate system, where the origin is in the
@@ -58,12 +58,20 @@ def pixel2world_pixy(col, row):
     _y = (col - 0.5*(XPOL_NUM_COLUMNS - 0.5 + row % 2))*XPOL_COLUMN_PITCH
     return (_x, _y)
 
+def pixel2world_xpe(col, row):
+    """
+    """
+    _x = (col - 0.5*(XPOL_NUM_COLUMNS - 0.5 + row % 2))*XPOL_COLUMN_PITCH
+    _y = (row - 0.5*(XPOL_NUM_ROWS - 1))*XPOL_ROW_PITCH
+    return (_x, _y)
 
-def pixel2world(col, row, coordinate_system='xpedaq'):
+def pixel2world(col, row, coordinate_system='xpol'):
     """Convert from pixel coordinates to world coordinates.
     """
-    if coordinate_system == 'xpedaq':
-        return pixel2world_xpedaq(col, row)
+    if coordinate_system == 'xpol':
+        return pixel2world_xpol(col, row)
+    elif coordinate_system == 'xpe':
+        return pixel2world_xpe(col, row)
     elif coordinate_system == 'pixy':
         return pixel2world_pixy(col, row)
     else:
@@ -158,7 +166,7 @@ class xpeHexagonalMatrix():
         self.start_row = start_row
         self.__pixel_positions = None
 
-    def compute_pixel_positions(self):
+    def compute_pixel_positions(self, coordinate_system='xpol'):
         """Compute 
         """
         x = []
@@ -166,7 +174,7 @@ class xpeHexagonalMatrix():
         for col in xrange(self.start_column, self.start_column +
                           self.num_columns):
             for row in xrange(self.start_row, self.start_row + self.num_rows):
-                _x, _y = pixel2world_xpedaq(col, row)
+                _x, _y = pixel2world(col, row, coordinate_system)
                 x.append(_x)
                 y.append(_y)
         self.__pixel_positions = numpy.vstack((x, y),).transpose()
@@ -206,7 +214,7 @@ class xpeHexagonalMatrix():
         for row in xrange(self.start_row, self.start_row + self.num_rows):
             for col in xrange(self.start_column, self.start_column +
                               self.num_columns):
-                x, y = self.pixel2world_recon(col, row)
+                x, y = self.pixel2world_pixy(col, row)
                 bord = self.border(col, row)
                 line = '%.5f %.4f %d %d %d %d %d\n' %\
                        (x, y, row, col, chan, mask, bord)
