@@ -61,8 +61,8 @@ def pixel2world_pixy(col, row):
 def pixel2world_xpe(col, row):
     """
     """
-    _x = (col - 0.5*(XPOL_NUM_COLUMNS - 0.5 + row % 2))*XPOL_COLUMN_PITCH
-    _y = (row - 0.5*(XPOL_NUM_ROWS - 1))*XPOL_ROW_PITCH
+    _x = (col - 0.5*(XPOL_NUM_COLUMNS - 1.5 + row % 2))*XPOL_COLUMN_PITCH
+    _y = (0.5*(XPOL_NUM_ROWS - 1) - row)*XPOL_ROW_PITCH
     return (_x, _y)
 
 def pixel2world(col, row, coordinate_system='xpol'):
@@ -224,7 +224,7 @@ class xpeHexagonalMatrix():
 
     def draw(self, adc_values=None, zero_suppression=0, text=True,
              color_map='Reds', grids=True, fig=None, subplot=111,
-             invert=False, show=True):
+             invert=True, show=True):
         """
         """
         if adc_values is not None:
@@ -300,7 +300,16 @@ class xpeXpolMatrix(xpeHexagonalMatrix):
 
 
 if __name__ == '__main__':
-    matrix = xpeHexagonalMatrix(30, 36, 0, 0)
-    matrix.draw()
+    for coordinate_system in XPOL_COORDINATE_SYSTEMS:
+        print(coordinate_system)
+        for (col, row) in [(0, 0),
+                           (0, 1),
+                           (0, XPOL_NUM_ROWS - 1),
+                           (XPOL_NUM_COLUMNS - 1, 0),
+                           (XPOL_NUM_COLUMNS - 1, XPOL_NUM_ROWS - 1)]:
+            x, y = pixel2world(col, row, coordinate_system)
+            print('(%d, %d) -> (%.4f, %.4f) mm' % (col, row, x, y))
+    #matrix = xpeHexagonalMatrix(30, 36, 0, 0)
+    #matrix.draw()
 
     
