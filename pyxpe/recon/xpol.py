@@ -25,6 +25,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import collections, transforms
 
+from pyxpe.utils.logging_ import logger
+
 
 XPOL_PIXELS_PER_BUFFER = 13200
 XPOL_NUM_BUFFERS = 8
@@ -193,7 +195,7 @@ class xpeHexagonalMatrix():
         return (col == 0) or (col == self.num_columns - 1) or\
             (row == 0) or (row == self.num_rows - 1)
 
-    def write_pixmap_ascii(self, filePath, coordinate_system):
+    def write_pixmap_ascii(self, file_path, coordinate_system):
         """Write a pixmap.dat-like file containing the pixel hash table used
         by the reconstruction.
 
@@ -206,21 +208,52 @@ class xpeHexagonalMatrix():
         7.59915 7.3875 351 298 105598 1 1
         7.59915 7.4375 351 299 105599 1 1
         """
+        assert file_path.endswith('.dat')
         chan = 0
         mask = 1
-        f = open(filePath, 'w')
+        logger.info('Opening output file %s...' % file_path)
+        f = open(file_path, 'w')
         f.write('%d\n%d\n' % (self.num_rows, self.num_columns))
         f.write('x y u v ch mask border\n')
         for row in xrange(self.start_row, self.start_row + self.num_rows):
             for col in xrange(self.start_column, self.start_column +
                               self.num_columns):
-                x, y = self.pixel2world(col, row, coordinate_system)
+                x, y = pixel2world(col, row, coordinate_system)
                 bord = self.border(col, row)
                 line = '%.5f %.4f %d %d %d %d %d\n' %\
                        (x, y, row, col, chan, mask, bord)
                 f.write(line)
                 chan += 1
         f.close()
+        logger.info('Pixmap written to %s.' % file_path)
+
+    def write_pixmap_fits(self, file_path, coordinate_system):
+        """Write the pixmap in FITS format.
+        """
+        assert file_path.endswith('.fits')
+        logger.info('Opening output file %s...' % file_path)
+        _col = numpy.arange(self.start_column, self.start_column +
+                            self.num_columns)
+        _col = numpy.repeat(_col, self.num_rows)
+        _row = numpy.arange(self.start_row, self.start_row + self.num_rows)
+        _row = numpy.tile(_row, self.num_columns)
+        _x, _y = pixel2world(_col, _row, coordinate_system)
+        from astropy.io import fits
+        primary_hdu = fits.PrimaryHDU()
+        primary_hdu.header.set('CREATOR', 'xpol.py')
+        primary_hdu.header.set('DATE', 'a')
+        col = fits.Column(name='i', format='I', array=_col)
+        row = fits.Column(name='j', format='I', array=_row)
+        x = fits.Column(name='x', format='E', unit='mm', array=_x)
+        y = fits.Column(name='y', format='E', unit='mm', array=_y)
+        cols = fits.ColDefs([col, row, x, y])
+        table_hdu = fits.BinTableHDU.from_columns(cols)
+        table_hdu.header.set('NCOLS', self.num_columns)
+        table_hdu.header.set('NROWS', self.num_rows)
+        table_hdu.header.set('EXTNAME', 'PIXMAP')
+        hdu_list = fits.HDUList([primary_hdu, table_hdu])
+        hdu_list.writeto(file_path, clobber=True)
+        logger.info('Pixmap written to %s.' % file_path)
 
     def draw(self, adc_values=None, zero_suppression=0, text=True,
              color_map='Reds', grids=True, fig=None, subplot=111,
