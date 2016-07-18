@@ -193,7 +193,7 @@ class xpeHexagonalMatrix():
         return (col == 0) or (col == self.num_columns - 1) or\
             (row == 0) or (row == self.num_rows - 1)
 
-    def write_pixmap(self, filePath):
+    def write_pixmap_ascii(self, filePath, coordinate_system):
         """Write a pixmap.dat-like file containing the pixel hash table used
         by the reconstruction.
 
@@ -214,7 +214,7 @@ class xpeHexagonalMatrix():
         for row in xrange(self.start_row, self.start_row + self.num_rows):
             for col in xrange(self.start_column, self.start_column +
                               self.num_columns):
-                x, y = self.pixel2world_pixy(col, row)
+                x, y = self.pixel2world(col, row, coordinate_system)
                 bord = self.border(col, row)
                 line = '%.5f %.4f %d %d %d %d %d\n' %\
                        (x, y, row, col, chan, mask, bord)
