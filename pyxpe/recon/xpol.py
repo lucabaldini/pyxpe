@@ -337,6 +337,7 @@ if __name__ == '__main__':
         print(coordinate_system)
         for (col, row) in [(0, 0),
                            (0, 1),
+                           (1, 0),
                            (0, XPOL_NUM_ROWS - 1),
                            (XPOL_NUM_COLUMNS - 1, 0),
                            (XPOL_NUM_COLUMNS - 1, XPOL_NUM_ROWS - 1)]:
