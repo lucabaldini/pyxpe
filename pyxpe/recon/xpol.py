@@ -239,18 +239,27 @@ class xpeHexagonalMatrix():
         _row = numpy.tile(_row, self.num_columns)
         _x, _y = pixel2world(_col, _row, coordinate_system)
         from astropy.io import fits
+        import time
         primary_hdu = fits.PrimaryHDU()
-        primary_hdu.header.set('CREATOR', 'xpol.py')
-        primary_hdu.header.set('DATE', 'a')
+        primary_hdu.header.set('CREATOR', 'xpol.py',
+                               's/w task which wrote this pixmap')
+        _date = time.strftime('%Y-%m-%dT%H:%M:%S', time.gmtime())
+        primary_hdu.header.set('DATE', _date,
+                               'file creation date (YYYY-MM-DDThh:mm:ss UT')
         col = fits.Column(name='i', format='I', array=_col)
         row = fits.Column(name='j', format='I', array=_row)
         x = fits.Column(name='x', format='E', unit='mm', array=_x)
         y = fits.Column(name='y', format='E', unit='mm', array=_y)
         cols = fits.ColDefs([col, row, x, y])
         table_hdu = fits.BinTableHDU.from_columns(cols)
-        table_hdu.header.set('NCOLS', self.num_columns)
-        table_hdu.header.set('NROWS', self.num_rows)
-        table_hdu.header.set('EXTNAME', 'PIXMAP')
+        table_hdu.header.set('NCOLS', self.num_columns,
+                             'number of columns in the matrix')
+        table_hdu.header.set('NROWS', self.num_rows,
+                             'number of rows in the matrix')
+        table_hdu.header.set('COORDSYS', coordinate_system,
+                             'name of the coordinate system')
+        table_hdu.header.set('EXTNAME', 'PIXMAP',
+                             'name of the extension')
         hdu_list = fits.HDUList([primary_hdu, table_hdu])
         hdu_list.writeto(file_path, clobber=True)
         logger.info('Pixmap written to %s.' % file_path)
