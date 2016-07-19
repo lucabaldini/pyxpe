@@ -19,11 +19,17 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
+import os
+
 from pyxpe.recon.xpol import xpeXpolMatrix, XPOL_COORDINATE_SYSTEMS
+from pyxpe import PYXPE_DATA
+
+
+OUTPUT_FOLDER = os.path.join(PYXPE_DATA, 'pixmaps')
 
 matrix = xpeXpolMatrix()
 for coordinate_system in XPOL_COORDINATE_SYSTEMS:
-    filePath = 'pixmap_%s.dat' % (coordinate_system)
+    filePath = os.path.join(OUTPUT_FOLDER, 'pixmap_%s.dat' % coordinate_system)
     matrix.write_pixmap_ascii(filePath, coordinate_system)
-    filePath = 'pixmap_%s.fits' % (coordinate_system)
+    filePath = os.path.join(OUTPUT_FOLDER, 'pixmap_%s.fits' % coordinate_system)
     matrix.write_pixmap_fits(filePath, coordinate_system)

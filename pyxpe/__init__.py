@@ -26,6 +26,7 @@ PACKAGE_NAME = 'pyxpe'
 PYXPE_ROOT = os.path.abspath(os.path.dirname(__file__))
 PYXPE_BASE = os.path.join(PYXPE_ROOT, os.pardir)
 PYXPE_BIN = os.path.join(PYXPE_BASE, 'bin')
+PYXPE_DATA = os.path.join(PYXPE_ROOT, 'data')
 PYXPE_RECON = os.path.join(PYXPE_ROOT, 'recon')
 PYXPE_SCRIPTS = os.path.join(PYXPE_ROOT, 'scripts')
 PYXPE_SIMULATION = os.path.join(PYXPE_ROOT, 'simulation')
