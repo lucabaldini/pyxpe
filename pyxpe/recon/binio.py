@@ -24,9 +24,9 @@ from pyxpe.utils.logging_ import logger
 import struct
 import numpy
 
-from pyxpe.event import xpeEventWindowed, xpeEventFullFrame
-from pyxpe.xpol import XPOL_NUM_PIXELS, XPOL_NUM_COLUMNS, XPOL_NUM_ROWS
-from pyxpe.xpol import XPOL_PIXELS_PER_BUFFER, XPOL_NUM_BUFFERS
+from pyxpe.recon.event import xpeEventWindowed, xpeEventFullFrame
+from pyxpe.recon.xpol import XPOL_NUM_PIXELS, XPOL_NUM_COLUMNS, XPOL_NUM_ROWS
+from pyxpe.recon.xpol import XPOL_PIXELS_PER_BUFFER, XPOL_NUM_BUFFERS
 
 
 
@@ -83,7 +83,7 @@ class xpeBinaryFileFullFrame(xpeBinaryFileBase):
         Warning
         -------
         We should return an event object instead of a plain numpy array.
-        """x
+        """
         data = self.read_words(XPOL_NUM_PIXELS)
         adc_counts = numpy.array(data, numpy.uint16)
         adc_counts = adc_counts.reshape(XPOL_PIXELS_PER_BUFFER,

@@ -41,5 +41,5 @@ if __name__ == '__main__':
     for i in xrange(args.num_events):
         event = input_file.next()
         print event
-        event.draw_ascii()
-        event.draw()
+        event.draw_ascii(args.zero_suppression)
+        event.draw(args.zero_suppression)
