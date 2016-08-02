@@ -30,6 +30,8 @@ class xpeDetectorConfiguration(dict):
     """Container encapsulating the detector configuration.
     """
 
+    CLOCK_FREQ_DICT = {96: 1.25, 64: 2.5, 32: 5., 0: 10.}
+
     def __init__(self, file_path=None, **kwargs):
         """
         """
@@ -54,6 +56,17 @@ class xpeDetectorConfiguration(dict):
                 value = []
             else:
                 value.append(int(line))
+
+    def clock_shift_ns(self):
+        """Return the clock shift in ns.
+        """
+        return self['clock_shift']*25
+
+    def clock_freq_mhz(self):
+        """Return the clock frequency in MHz.
+        """
+        return self.CLOCK_FREQ_DICT[self['clock_frequency_code']]
+    
 
 
 def load_run_info(folder_path):

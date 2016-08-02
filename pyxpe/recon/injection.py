@@ -26,9 +26,12 @@ from scipy.sparse import lil_matrix
 from pyxpe.recon.binio import xpeBinaryFileWindowed
 from pyxpe.utils.logging_ import logger
 from pyxpe.utils.profile import xpeChrono
+from pyxpe.recon.daq import load_run_info
+from pyxpe.recon.event import xpeAnsiColors
 
 
-def mean_variance(file_path, num_events):
+
+def compute_mean_rms(file_path, plot=False):
     """Step through a charge-injection binary file and calculate the
     mean and standard deviation of the charge distribution in each pixel.
 
@@ -53,25 +56,42 @@ def mean_variance(file_path, num_events):
         mean[indices] += delta/n[indices]
         M2[indices] += delta*(event.adc_values - mean[indices])
     rms = numpy.sqrt(M2/(n - 1))
+    if plot:
+        fig, axes = plt.subplots(nrows=1, ncols=2)
+        img0 = axes[0].matshow(mean)
+        img1 = axes[1].matshow(rms)
+        plt.show()
+    return mean, rms
 
-    fig, axes = plt.subplots(nrows=1, ncols=2)
-    img0 = axes[0].matshow(mean)
-    img1 = axes[1].matshow(rms)
-    #plt.axis([41, 61, 39, 63])
-    #cax = fig.add_axes([0.9, 0.1, 0.03, 0.8])
-    #fig.colorbar(img, cax=cax)
-    plt.show()
+
+def analyze_run(folder_path):
+    """Analyze a charge-injection run.
+    """
+    run_info = load_run_info(folder_path)
+    config = run_info['config']
+    x0 = config['pixel_address_x']
+    y0 = config['pixel_address_y']
+    logger.info('Charge injected at address (%d, %d)...' % (x0, y0))
+    logger.info('Readout at %.2f MHz, clock shift %d ns...' %\
+                (config.clock_freq_mhz(), config.clock_shift_ns()))
+    mean, rms = compute_mean_rms(run_info['data_file_path'])
+    padding = 5
+    for x in range(x0 - padding, x0 + padding + 1):
+        line = '(%3d, %3d) -> %.2f +/- %.2f' % (x, y0, mean[x, y0], rms[x, y0])
+        if x == x0:
+            line = '%s%s%s' % (xpeAnsiColors.RED, line, xpeAnsiColors.ENDC)
+        logger.info(line)
+
     
-
-
 
 if __name__ == '__main__':
     import argparse
     formatter = argparse.ArgumentDefaultsHelpFormatter
     parser = argparse.ArgumentParser(formatter_class=formatter)
-    parser.add_argument('binfile', type=str,
-                        help='the input binary file')
+    parser.add_argument('folder', type=str,
+                        help='the input run folder')
     parser.add_argument('-n', '--num_events', type=int, default=10,
                         help = 'number of events to be processed')
     args = parser.parse_args()
-    mean_variance(args.binfile, args.num_events)
+    #mean_variance(args.binfile, args.num_events)
+    analyze_run(args.folder)
