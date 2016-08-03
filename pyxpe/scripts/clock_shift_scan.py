@@ -32,6 +32,8 @@ if __name__ == '__main__':
                         help='the data folder (containing all the run folders)')
     parser.add_argument('-s', '--start_run_number', type=int,
                         help='initial run number')
+    parser.add_argument('-o', '--output_folder', type=str,
+                        help='Output folder')                        
     args = parser.parse_args()
     startRunNumber = args.start_run_number
     dataFolder = args.folder
@@ -40,7 +42,8 @@ if __name__ == '__main__':
     machineId = 2
     shifts = numpy.zeros(shape=(numFrequency,numShift))
     displacements = numpy.zeros(shape=(numFrequency,numShift))
-    plt.figure("DispVsClshift")
+    figName  = "DispVsClshift"
+    plt.figure(figName)
     plt.xlabel("Clock shift [ns]")
     plt.ylabel("Displacement [pixels]")
     _x0 = 0
@@ -55,11 +58,20 @@ if __name__ == '__main__':
             shifts[freqId][shiftId] = _shift
             displacements[freqId][shiftId] = _xbarycenter - _x0
         plt.plot(shifts[freqId, : ], displacements[freqId, : ],
-                 label="%d MHz"%_freq)
+                 label="%.2f MHz"%_freq)
     plt.title("Pixel (%d , %d)" % (_x0, _y0))                
     plt.xlim([220., 850.])
     ax = plt.gca()
     handles, labels = ax.get_legend_handles_labels()
-    plt.legend(handles, labels, loc =  0)
-    plt.show()
+    plt.legend(handles, labels, loc =  9)
+    if args.output_folder is None:
+        plt.show()
+    else:
+        outFileNameBase = figName + '%d_%d'%(_x0, _y0)
+        outFilePath = args.output_folder + '/' + outFileNameBase
+        plt.savefig(outFilePath + '.png')
+        plt.ylim([-0.04, 0.04])
+        plt.xlim([475., 800.])
+        plt.savefig(outFilePath + '_zoomed.png')
+    
     
