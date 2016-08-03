@@ -46,7 +46,7 @@ class xpeDetectorConfiguration(dict):
         logger.info('Loading configuration from %s...' % file_path)
         key = None
         for line in open(file_path).readlines():
-            line = line.strip('\n')
+            line = line.rstrip()
             if line.startswith('//'):
                 if key is not None:
                     if len(value) == 1:
