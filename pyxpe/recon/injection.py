@@ -75,13 +75,18 @@ def analyze_run(folder_path):
     logger.info('Readout at %.2f MHz, clock shift %d ns...' %\
                 (config.clock_freq_mhz(), config.clock_shift_ns()))
     mean, rms = compute_mean_rms(run_info['data_file_path'])
-    padding = 5
+    x_tot_charge = 0.
+    x_barycenter = 0.
+    padding = 8
     for x in range(x0 - padding, x0 + padding + 1):
         line = '(%3d, %3d) -> %.2f +/- %.2f' % (x, y0, mean[x, y0], rms[x, y0])
         if x == x0:
             line = '%s%s%s' % (xpeAnsiColors.RED, line, xpeAnsiColors.ENDC)
         logger.info(line)
-
+        x_tot_charge += mean[x, y0]
+        x_barycenter += x*mean[x, y0]
+    return x0, y0, config.clock_freq_mhz(), config.clock_shift_ns(),\
+           x_barycenter/x_tot_charge
     
 
 if __name__ == '__main__':
