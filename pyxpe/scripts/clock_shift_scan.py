@@ -33,7 +33,9 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--start_run_number', type=int,
                         help='initial run number')
     parser.add_argument('-o', '--output_folder', type=str,
-                        help='Output folder')                        
+                        help='Output folder')
+    parser.add_argument('-l', '--label', type=str,
+                        help='A custom label appended to the output file names')                                                
     args = parser.parse_args()
     startRunNumber = args.start_run_number
     dataFolder = args.folder
@@ -67,11 +69,13 @@ if __name__ == '__main__':
     if args.output_folder is None:
         plt.show()
     else:
-        outFileNameBase = figName + '%d_%d'%(_x0, _y0)
+        outFileNameBase = figName + '_%d_%d'%(_x0, _y0)
+        if args.label is not None:
+            outFileNameBase = outFileNameBase + "_" + args.label
         outFilePath = args.output_folder + '/' + outFileNameBase
         plt.savefig(outFilePath + '.png')
-        plt.ylim([-0.04, 0.04])
-        plt.xlim([475., 800.])
+        plt.ylim([-0.06, 0.06])
+        plt.xlim([400., 800.])
         plt.savefig(outFilePath + '_zoomed.png')
     
     
