@@ -84,13 +84,16 @@ class xpeBinaryFileFullFrame(xpeBinaryFileBase):
         -------
         We should return an event object instead of a plain numpy array.
         """
-        data = self.read_words(XPOL_NUM_PIXELS)
+        try:
+            data = self.read_words(XPOL_NUM_PIXELS)
+        except Exception:
+            raise StopIteration()
         adc_counts = numpy.array(data, numpy.uint16)
         adc_counts = adc_counts.reshape(XPOL_PIXELS_PER_BUFFER,
                                         XPOL_NUM_BUFFERS)
         adc_counts = adc_counts.transpose()
         adc_counts = adc_counts.flatten()
-        adc_counts = adc_counts.reshape(XPOL_NUM_ROWS, XPOL_NUM_COLUMNS)
+        adc_counts = adc_counts.reshape(XPOL_NUM_COLUMNS, XPOL_NUM_ROWS)
         return adc_counts
             
 
