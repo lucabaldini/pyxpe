@@ -64,6 +64,25 @@ def compute_mean_rms(file_path, plot=False):
     return mean, rms
 
 
+def plot_pixel_distribution(file_path, x, y):
+    assert(file_path.endswith('.mdat'))
+    heightList = []
+    for event in xpeBinaryFileWindowed(file_path):
+        try:
+            heightList.append(event.adc_value(x - event.xmin, y- event.ymin))
+        except IndexError:
+            pass
+    #print heightList
+    heights = numpy.array(heightList)
+    print len(heights), numpy.mean(heights), numpy.std(heights)
+    xmin = -1
+    xmax = numpy.amax(heights)
+    nbins = xmax - xmin
+    histRange = (xmin, xmax)
+    plt.hist(heights, nbins, histRange, facecolor='g')
+    plt.show()
+
+
 def analyze_run(folder_path):
     """Analyze a charge-injection run.
     """
@@ -71,9 +90,11 @@ def analyze_run(folder_path):
     config = run_info['config']
     x0 = config['pixel_address_x']
     y0 = config['pixel_address_y']
+    charge = config['calibration_dac']
     logger.info('Charge injected at address (%d, %d)...' % (x0, y0))
     logger.info('Readout at %.2f MHz, clock shift %d ns...' %\
                 (config.clock_freq_mhz(), config.clock_shift_ns()))
+    logger.info('Value of the charge injected: %d DAC' % charge)
     mean, rms = compute_mean_rms(run_info['data_file_path'])
     x_tot_charge = 0.
     x_barycenter = 0.
@@ -86,7 +107,7 @@ def analyze_run(folder_path):
         x_tot_charge += mean[x, y0]
         x_barycenter += x*mean[x, y0]
     return x0, y0, config.clock_freq_mhz(), config.clock_shift_ns(),\
-           x_barycenter/x_tot_charge
+           charge, x_barycenter/x_tot_charge
     
 
 if __name__ == '__main__':
@@ -99,4 +120,5 @@ if __name__ == '__main__':
                         help = 'number of events to be processed')
     args = parser.parse_args()
     #mean_variance(args.binfile, args.num_events)
-    analyze_run(args.folder)
+    #analyze_run(args.folder)
+    plot_pixel_distribution(args.folder, 65, 258)

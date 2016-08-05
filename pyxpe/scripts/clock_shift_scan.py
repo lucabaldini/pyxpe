@@ -56,7 +56,8 @@ if __name__ == '__main__':
             _run += '{0:07d}'.format(startRunNumber + shiftId 
                                      + numShift * freqId)
             _folder = dataFolder + "/" + _run
-            _x0, _y0, _freq, _shift, _xbarycenter = analyze_run(_folder)
+            _x0, _y0, _freq, _shift, _charge, _xbarycenter =\
+                                                        analyze_run(_folder)
             shifts[freqId][shiftId] = _shift
             displacements[freqId][shiftId] = _xbarycenter - _x0
         plt.plot(shifts[freqId, : ], displacements[freqId, : ],
