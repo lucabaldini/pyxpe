@@ -28,6 +28,7 @@ from pyxpe.utils.profile import xpeChrono
 from pyxpe.recon.xpol import XPOL_NUM_PIXELS, XPOL_NUM_COLUMNS, XPOL_NUM_ROWS
 
 
+
 def mean_rms(file_path, num_events=1000000, plot=False):
     """Step through a full-frame binary file and calculate the
     mean and standard deviation of the charge distribution in each pixel.
@@ -70,6 +71,22 @@ def mean_rms(file_path, num_events=1000000, plot=False):
     return mean, rms
 
 
+def plot_channel(file_path, col, row, num_events=1000000, show=True):
+    """
+    """
+    assert(file_path.endswith('.mdat'))
+    vals = []
+    for adc_values in xpeBinaryFileFullFrame(file_path):
+        vals.append(float(adc_values[col, row]))
+    vals = numpy.array(vals)
+    logger.info('Channel (%d, %d) info: mean = %.3f, rms = %.3f ADC counts' %\
+                (col, row, numpy.mean(vals), numpy.std(vals)))
+    plt.figure()
+    plt.hist(vals, bins=numpy.arange(vals.min(), vals.max(), 1))
+    if show:
+        plt.show()
+
+
 def process_run(input_file_path, output_file_path=None, num_events=1000000):
     """Process a pedestal run in full-frame mode and write a FITS file
     with the pedestal and noise values for each pixel in the matrix.
@@ -108,4 +125,5 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--num_events', type=int, default=1000000,
                         help = 'number of events to be processed')
     args = parser.parse_args()
-    process_run(args.binfile, None, args.num_events)
+    #process_run(args.binfile, None, args.num_events)
+    plot_channel(args.binfile, 130, 189)
