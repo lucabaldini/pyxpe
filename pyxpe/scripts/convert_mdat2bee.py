@@ -161,13 +161,32 @@ if __name__ == '__main__':
     out_file_name = out_file_name.replace('.mdat', '.bee')
     output_file = xpeBinaryBEEOutput(out_file_name, args.zero_suppression,
                                      args.header, args.time_offset)
+
+    list_n_hits   = [] # with no zero suppression each hit is 1 word
+    list_n_words = []
     print "Compressing events with thr %d " % args.zero_suppression
     for i in xrange(args.num_events):
         event = input_file.next()
         (nHit, nWords) = output_file.addEvent(event, False)
+        list_n_hits.append(nHit)
+        list_n_words.append(nWords)
+        #print "Evt %d, n hits = %d, n word in out file = %d" % (i, nHit, nWords)
 
-        print "Evt %d, n hits = %d, n word in out file = %d" % (i, nHit, nWords)
+    import numpy
+    list_n_hits  = numpy.array(list_n_hits)
+    list_n_words = numpy.array(list_n_words)
+    len_n_hits = len(list_n_hits)
+    ave_n_hits = float(sum(list_n_hits))/len_n_hits
+    rms_n_hits = numpy.sqrt(sum((list_n_hits-ave_n_hits)**2)/(len_n_hits -1))
+    len_n_words = len(list_n_words)
+    ave_n_words = float(sum(list_n_words))/len_n_words
+    rms_n_words = numpy.sqrt(sum((list_n_words-ave_n_words)**2)/(len_n_words -1))
 
+    print "Number of hits stats: [min, max, average, rms] = [%d, %d, %f, %f]" %\
+        (min(list_n_hits), max(list_n_hits), ave_n_hits, rms_n_hits )
 
+    print "Number of words stats: [min, max, average, rms] = [%d, %d, %f, %f]"%\
+        (min(list_n_words), max(list_n_words), ave_n_words, rms_n_words)
 
+    
     
