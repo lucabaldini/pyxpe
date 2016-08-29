@@ -44,7 +44,7 @@ class xpeBinaryBEEOutput:
         self.__outfile = file(self.__outfilePath, "wb+") # cleanup
 
     def __write2file(self, wordseq, nwords):
-        # write a word at a time to avoid confusion with little/big endian
+        # write a word at a time, to avoid confusion with little/big endian
         # one word is unsigned short, 16 bits! forcing big endian with '>'
         for i in xrange(nwords-1, -1, -1):
             self.__outfile.write(struct.pack('>H', (wordseq>>(16*i))&0xffff))
@@ -73,8 +73,8 @@ class xpeBinaryBEEOutput:
         # ROI 9+9 + 6+6 bits
         xmin = evt.xmin
         ymin = evt.ymin
-        deltax = evt.xmax - evt.xmin
-        deltay = evt.ymax - evt.ymin
+        deltax = evt.num_columns()
+        deltay = evt.num_rows()
         assert (deltax<64 and deltay<64), "ROI length must be <2**6 "+\
             "but is (%d, %d)" % (deltax, deltay)
         if Verbose:
@@ -93,11 +93,51 @@ class xpeBinaryBEEOutput:
             print "ROI OUT (bin):", bin(roi_out)
         self.__write2file(roi_out, 2)
 
-        # HIT
-        # scan...
+        # HIT 1+6+6+3
+        # Marker: 1 New set of hits; 0 contiguous hit
+        # 12 bit of x/y (inside roi) for marker 1 or adc for marker 0
+        # 3 dummy bits (000) to complete the word
+        if Verbose:
+            print "HIT ROI Size: %d x %d (tot %d)" % \
+                (evt.num_columns(), evt.num_rows(), evt.num_pixels()) 
+            print "nPixels above thr (%d)= %d" % \
+                (self.__hit_threshold,
+                 len(evt.adc_values[evt.adc_values > self.__hit_threshold]))
+            print evt.ascii(0)
+
+        hit_word_count = 0
+        ContiguousHitFlag = 0
+        hit_out = 0x0
+        for yId in xrange(evt.num_rows()):
+            for xId in xrange(evt.num_columns()):
+                currentX = xId+xmin
+                currentY = yId+ymin
+                currentH = evt.adc_value(xId,yId)
+                if currentH>self.__hit_threshold: # above thr
+                    if ContiguousHitFlag == 0: # no hit before
+                        hit_out = 0x8000 | ((xId&0x3f)<<9) | ((yId&0x3f)<<3)
+                        hit_out = (hit_out<<16) | ((currentH&0xfff)<<3)
+                        ContiguousHitFlag = 1
+                        self.__write2file(hit_out, 2)
+                        hit_word_count +=2
+                        if Verbose:
+                            print "HIT NEW", xId, yId, currentH 
+                            print "HIT OUT", hex(hit_out), bin(hit_out)
+                    else:
+                        hit_out =  ((currentH&0xfff)<<3)
+                        self.__write2file(hit_out, 1)
+                        hit_word_count +=1
+                        if Verbose:
+                            print "HIT CONT", xId, yId, currentH
+                            print "HIT OUT", hex(hit_out), bin(hit_out)
+                else:
+                    ContiguousHitFlag = 0
+        
+        return (evt.num_pixels(), hit_word_count)
+                        
 
         
-        
+
 if __name__ == '__main__':
     formatter = argparse.ArgumentDefaultsHelpFormatter
     parser = argparse.ArgumentParser(formatter_class=formatter)
@@ -121,9 +161,12 @@ if __name__ == '__main__':
     out_file_name = out_file_name.replace('.mdat', '.bee')
     output_file = xpeBinaryBEEOutput(out_file_name, args.zero_suppression,
                                      args.header, args.time_offset)
+    print "Compressing events with thr %d " % args.zero_suppression
     for i in xrange(args.num_events):
         event = input_file.next()
-        output_file.addEvent(event)
+        (nHit, nWords) = output_file.addEvent(event, False)
+
+        print "Evt %d, n hits = %d, n word in out file = %d" % (i, nHit, nWords)
 
 
 
