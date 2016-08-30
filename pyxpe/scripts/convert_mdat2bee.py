@@ -29,7 +29,7 @@ import struct
 
 
 # Settings for output file
-EVT_HEADER    = 0xffff # None to skip header
+EVT_HEADER    = 0xff 
 HIT_THRESHOLD = 3 # for zero suppression
 TIME_OFFSET   = 400*24*3600 # arbitrary offset for event time, 400 days...
 
@@ -43,11 +43,12 @@ class xpeBinaryBEEOutput:
         self.__time_offset   = time_offset
         self.__outfile = file(self.__outfilePath, "wb+") # cleanup
 
-    def __write2file(self, wordseq, nwords):
+    def __write2file(self, wordseq, nbytes):
         # write a word at a time, to avoid confusion with little/big endian
         # one word is unsigned short, 16 bits! forcing big endian with '>'
-        for i in xrange(nwords-1, -1, -1):
-            self.__outfile.write(struct.pack('>H', (wordseq>>(16*i))&0xffff))
+        for i in xrange(nbytes-1, -1, -1):
+            #self.__outfile.write(struct.pack('>H', (wordseq>>(16*i))&0xffff))
+            self.__outfile.write(struct.pack('>B', (wordseq>>(8*i))&0xff))
 
     def addEvent(self, evt, Verbose=True):
         if Verbose:
@@ -68,15 +69,16 @@ class xpeBinaryBEEOutput:
         if Verbose:
             print "TIME OUT (hex) sec:", hex(time_out)
             print "TIME OUT (bin) sec:", bin(time_out)
-        self.__write2file(time_out, 3)
+        self.__write2file(time_out, 6)
 
-        # ROI 9+9 + 6+6 bits
+
+        # ROI 9+9 + 9+9 bits
         xmin = evt.xmin
         ymin = evt.ymin
         deltax = evt.num_columns()
         deltay = evt.num_rows()
-        assert (deltax<64 and deltay<64), "ROI length must be <2**6 "+\
-            "but is (%d, %d)" % (deltax, deltay)
+        #assert (deltax<64 and deltay<64), "ROI length must be <2**6 "+\
+        #    "but is (%d, %d)" % (deltax, deltay)
         if Verbose:
             print "ROI (dec):", xmin, ymin, deltax, deltay
             print "ROI     (hex):", hex(xmin), hex(ymin),\
@@ -84,19 +86,18 @@ class xpeBinaryBEEOutput:
             print "ROI     (bin):", bin(xmin), bin(ymin), \
                 bin(deltax), bin(deltay)
 
-        roi_out =  ((xmin&0x1ff)<<23) | \
-                   ((ymin&0x1ff)<<14) | \
-                   ((deltax&0x3f)<<8) | \
-                   ((deltay&0x3f)<<2)
+        roi_out =  ((xmin&0x1ff)<<31) | \
+                   ((ymin&0x1ff)<<22) | \
+                   ((deltax&0x1ff)<<13) | \
+                   ((deltay&0x1ff)<<4)
         if Verbose:
             print "ROI OUT (hex):", hex(roi_out)
             print "ROI OUT (bin):", bin(roi_out)
-        self.__write2file(roi_out, 2)
+        self.__write2file(roi_out, 5)
 
-        # HIT 1+6+6+3
-        # Marker: 1 New set of hits; 0 contiguous hit
-        # 12 bit of x/y (inside roi) for marker 1 or adc for marker 0
-        # 3 dummy bits (000) to complete the word
+
+        # HIT 2+12/18 + 4/2 type E (for PH) or type C ()
+        # Marker: C 0b10 E 0b00 C-end-of-package 0b11      
         if Verbose:
             print "HIT ROI Size: %d x %d (tot %d)" % \
                 (evt.num_columns(), evt.num_rows(), evt.num_pixels()) 
@@ -105,7 +106,7 @@ class xpeBinaryBEEOutput:
                  len(evt.adc_values[evt.adc_values > self.__hit_threshold]))
             print evt.ascii(0)
 
-        hit_word_count = 0
+        hit_byte_count = 0
         ContiguousHitFlag = 0
         hit_out = 0x0
         for yId in xrange(evt.num_rows()):
@@ -115,25 +116,33 @@ class xpeBinaryBEEOutput:
                 currentH = evt.adc_value(xId,yId)
                 if currentH>self.__hit_threshold: # above thr
                     if ContiguousHitFlag == 0: # no hit before
-                        hit_out = 0x8000 | ((xId&0x3f)<<9) | ((yId&0x3f)<<3)
-                        hit_out = (hit_out<<16) | ((currentH&0xfff)<<3)
+                        hit_out = (0b10<<22) | \
+                                  ((xId&0x1ff)<<13) | ((yId&0x1ff)<<4)
+                        hit_out = (hit_out<<16) | ((currentH&0xfff)<<2)
                         ContiguousHitFlag = 1
-                        self.__write2file(hit_out, 2)
-                        hit_word_count +=2
+                        self.__write2file(hit_out, 5)
+                        hit_byte_count +=5
                         if Verbose:
                             print "HIT NEW", xId, yId, currentH 
                             print "HIT OUT", hex(hit_out), bin(hit_out)
                     else:
-                        hit_out =  ((currentH&0xfff)<<3)
-                        self.__write2file(hit_out, 1)
-                        hit_word_count +=1
+                        hit_out = ((currentH&0xfff)<<2)
+                        self.__write2file(hit_out, 2)
+                        hit_byte_count +=2
                         if Verbose:
                             print "HIT CONT", xId, yId, currentH
                             print "HIT OUT", hex(hit_out), bin(hit_out)
                 else:
                     ContiguousHitFlag = 0
+        # End of package
+        hit_out = (0b11<<22) | ((xId&0x1ff)<<13) | ((yId&0x1ff)<<4)
+        self.__write2file(hit_out, 3)
+        hit_byte_count +=3
+        if Verbose:
+            print "HIT LAST", xId, yId
+            print "HIT OUT", hex(hit_out), bin(hit_out)
         
-        return (evt.num_pixels(), hit_word_count)
+        return (evt.num_pixels(), hit_byte_count)
                         
 
         
@@ -172,21 +181,22 @@ if __name__ == '__main__':
         list_n_words.append(nWords)
         #print "Evt %d, n hits = %d, n word in out file = %d" % (i, nHit, nWords)
 
-    import numpy
-    list_n_hits  = numpy.array(list_n_hits)
-    list_n_words = numpy.array(list_n_words)
-    len_n_hits = len(list_n_hits)
-    ave_n_hits = float(sum(list_n_hits))/len_n_hits
-    rms_n_hits = numpy.sqrt(sum((list_n_hits-ave_n_hits)**2)/(len_n_hits -1))
-    len_n_words = len(list_n_words)
-    ave_n_words = float(sum(list_n_words))/len_n_words
-    rms_n_words = numpy.sqrt(sum((list_n_words-ave_n_words)**2)/(len_n_words -1))
-
-    print "Number of hits stats: [min, max, average, rms] = [%d, %d, %f, %f]" %\
-        (min(list_n_hits), max(list_n_hits), ave_n_hits, rms_n_hits )
-
-    print "Number of words stats: [min, max, average, rms] = [%d, %d, %f, %f]"%\
-        (min(list_n_words), max(list_n_words), ave_n_words, rms_n_words)
+    if args.num_events>1:
+        import numpy
+        list_n_hits  = numpy.array(list_n_hits)
+        list_n_words = numpy.array(list_n_words)
+        len_n_hits = len(list_n_hits)
+        ave_n_hits = float(sum(list_n_hits))/len_n_hits
+        rms_n_hits = numpy.sqrt(sum((list_n_hits-ave_n_hits)**2)/(len_n_hits -1))
+        len_n_words = len(list_n_words)
+        ave_n_words = float(sum(list_n_words))/len_n_words
+        rms_n_words = numpy.sqrt(sum((list_n_words-ave_n_words)**2)/(len_n_words -1))
+        
+        print "Number of hits stats: [min, max, average, rms] = [%d, %d, %f, %f]" %\
+            (min(list_n_hits), max(list_n_hits), ave_n_hits, rms_n_hits )
+        
+        print "Number of bytes stats: [min, max, average, rms] = [%d, %d, %f, %f]"%\
+            (min(list_n_words), max(list_n_words), ave_n_words, rms_n_words)
 
     
     
