@@ -106,7 +106,8 @@ class xpeBinaryBEEOutput:
                  len(evt.adc_values[evt.adc_values > self.__hit_threshold]))
             print evt.ascii(0)
 
-        hit_byte_count = 0
+        hit_pixel_count = 0
+        hit_byte_count  = 0
         ContiguousHitFlag = 0
         hit_out = 0x0
         for yId in xrange(evt.num_rows()):
@@ -121,14 +122,16 @@ class xpeBinaryBEEOutput:
                         hit_out = (hit_out<<16) | ((currentH&0xfff)<<2)
                         ContiguousHitFlag = 1
                         self.__write2file(hit_out, 5)
-                        hit_byte_count +=5
+                        hit_byte_count  +=5
+                        hit_pixel_count +=1
                         if Verbose:
                             print "HIT NEW", xId, yId, currentH 
                             print "HIT OUT", hex(hit_out), bin(hit_out)
                     else:
                         hit_out = ((currentH&0xfff)<<2)
                         self.__write2file(hit_out, 2)
-                        hit_byte_count +=2
+                        hit_byte_count  +=2
+                        hit_pixel_count +=1
                         if Verbose:
                             print "HIT CONT", xId, yId, currentH
                             print "HIT OUT", hex(hit_out), bin(hit_out)
@@ -142,7 +145,7 @@ class xpeBinaryBEEOutput:
             print "HIT LAST", xId, yId
             print "HIT OUT", hex(hit_out), bin(hit_out)
         
-        return (evt.num_pixels(), hit_byte_count)
+        return (evt.num_pixels(), hit_byte_count, hit_pixel_count)
                         
 
         
@@ -172,25 +175,31 @@ if __name__ == '__main__':
                                      args.header, args.time_offset)
 
     list_n_hits   = [] # with no zero suppression each hit is 1 word
-    list_n_words = []
+    list_n_words  = []
+    list_n_hits_ovrThr = []
     print "Compressing events with thr %d " % args.zero_suppression
     for i in xrange(args.num_events):
         event = input_file.next()
-        (nHit, nWords) = output_file.addEvent(event, False)
+        (nHit, nWords, nHitOverThr) = output_file.addEvent(event, False)
         list_n_hits.append(nHit)
         list_n_words.append(nWords)
+        list_n_hits_ovrThr.append(nHitOverThr)
         #print "Evt %d, n hits = %d, n word in out file = %d" % (i, nHit, nWords)
 
     if args.num_events>1:
         import numpy
         list_n_hits  = numpy.array(list_n_hits)
         list_n_words = numpy.array(list_n_words)
+        list_n_hits_ovrThr  = numpy.array(list_n_hits_ovrThr)
         len_n_hits = len(list_n_hits)
         ave_n_hits = float(sum(list_n_hits))/len_n_hits
         rms_n_hits = numpy.sqrt(sum((list_n_hits-ave_n_hits)**2)/(len_n_hits -1))
         len_n_words = len(list_n_words)
         ave_n_words = float(sum(list_n_words))/len_n_words
         rms_n_words = numpy.sqrt(sum((list_n_words-ave_n_words)**2)/(len_n_words -1))
+        len_n_hits_ovrThr = len(list_n_hits_ovrThr)
+        ave_n_hits_ovrThr = float(sum(list_n_hits_ovrThr))/len_n_hits_ovrThr
+        rms_n_hits_ovrThr = numpy.sqrt(sum((list_n_hits_ovrThr-ave_n_hits_ovrThr)**2)/(len_n_hits_ovrThr -1))
         
         print "Number of hits stats: [min, max, average, rms] = [%d, %d, %f, %f]" %\
             (min(list_n_hits), max(list_n_hits), ave_n_hits, rms_n_hits )
@@ -198,5 +207,11 @@ if __name__ == '__main__':
         print "Number of bytes stats: [min, max, average, rms] = [%d, %d, %f, %f]"%\
             (min(list_n_words), max(list_n_words), ave_n_words, rms_n_words)
 
+        print "Number of hits_ovrThr stats: [min, max, average, rms] = [%d, %d, %f, %f]" %\
+            (min(list_n_hits_ovrThr), max(list_n_hits_ovrThr), ave_n_hits_ovrThr, rms_n_hits_ovrThr)
     
-    
+        n_address = (list_n_words -2.*list_n_hits_ovrThr)/3 -1
+        print "Averave Number of Address = ", sum(n_address)/len(n_address)
+
+        n_byte_per_hit = 1.*list_n_words/list_n_hits
+        print "Averave Number of byte/hit = ", sum(n_byte_per_hit)/len(n_byte_per_hit)
