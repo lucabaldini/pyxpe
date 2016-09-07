@@ -213,5 +213,17 @@ if __name__ == '__main__':
         n_address = (list_n_words -2.*list_n_hits_ovrThr)/3 -1
         print "Averave Number of Address = ", sum(n_address)/len(n_address)
 
-        n_byte_per_hit = 1.*list_n_words/list_n_hits
+        n_byte_per_hit = 1.*list_n_words/list_n_hits_ovrThr
         print "Averave Number of byte/hit = ", sum(n_byte_per_hit)/len(n_byte_per_hit)
+
+        print "SUMMARY: thr, <nHit>, <nByte>, sigma_nByte, <byte/nHit>", \
+            args.zero_suppression, ave_n_hits_ovrThr, ave_n_words, rms_n_words, \
+            sum(n_byte_per_hit)/len(n_byte_per_hit)
+
+        import matplotlib.pyplot as plt
+        plt.grid(color='gray')
+        plt.title("Number of bytes in zero-suppressed output file")
+        plt.ylabel("Entries/bin")
+        plt.xlabel("# Bytes")
+        plt.hist(list_n_words, bins=200, range=(0,1500))
+        plt.show()
