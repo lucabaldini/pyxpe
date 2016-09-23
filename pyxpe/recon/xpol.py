@@ -36,6 +36,7 @@ XPOL_NUM_ROWS = 352
 XPOL_COLUMN_PITCH = 0.0500
 XPOL_ROW_PITCH = 0.0433
 XPOL_COORDINATE_SYSTEMS = ['xpol', 'xpe', 'pixy']
+XPOL_DEFAULT_COORDINATE_SYSTEM = 'xpol'
 
 
 def pixel2world_xpol(col, row):
@@ -67,7 +68,7 @@ def pixel2world_xpe(col, row):
     _y = (0.5*(XPOL_NUM_ROWS - 1) - row)*XPOL_ROW_PITCH
     return (_x, _y)
 
-def pixel2world(col, row, coordinate_system='xpol'):
+def pixel2world(col, row, coordinate_system=XPOL_DEFAULT_COORDINATE_SYSTEM):
     """Convert from pixel coordinates to world coordinates.
     """
     if coordinate_system == 'xpol':
@@ -168,7 +169,8 @@ class xpeHexagonalMatrix():
         self.start_row = start_row
         self.__pixel_positions = None
 
-    def compute_pixel_positions(self, coordinate_system='xpol'):
+    def compute_pixel_positions(self,
+                coordinate_system=XPOL_DEFAULT_COORDINATE_SYSTEM):
         """Compute 
         """
         x = []
