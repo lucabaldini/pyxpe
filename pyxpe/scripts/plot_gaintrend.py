@@ -28,9 +28,12 @@ for runid in [393, 394, 395, 396, 397]:#, 398, 399, 400,
 
 # SELECT RUNS to be analized
 # GPD19
-for runid in [2724, 2725, 2726, 2727, 2728, 2729, 2730]:
+for runid in [2724, 2725, 2726, 2727, 2728, 2729, 2730, 2731, 2732]:
     tt.Add("/data1/xpe/xpedata/002_%07d/002_%07d_data_TH5.root"%(runid, runid))
     pass
+# Note
+# HV off after 2732 - 2 days off to check what happens to the gain
+
 # SELECT OPTIONS
 #Label      = 'GPD018_fill1_reference'
 Label      = 'GPD019_fill0'
