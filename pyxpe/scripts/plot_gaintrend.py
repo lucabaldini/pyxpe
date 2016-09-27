@@ -11,13 +11,13 @@ G2FWHM = 2.3548200450309493
 tt = ROOT.TChain("tree") 
 # SELECT RUNS to be analized
 # GPD18
-for runid in [393, 394, 395, 396, 397, 398, 399, 400,
-              401, 402, 403, 406, 407, 408, 409, 410, 
-              411, 412, 413, 414, 415, 416,
-              417, 418, 420, 421, 422, 423, 424, 425, 426, 427, 428,
-              432, 433, 434, 435, 436, 437, 438, 439, 440]:
-    pass
+for runid in [393, 394, 395, 396, 397]:#, 398, 399, 400,
+              #401, 402, 403, 406, 407, 408, 409, 410, 
+              #411, 412, 413, 414, 415, 416,
+              #417, 418, 420, 421, 422, 423, 424, 425, 426, 427, 428,
+              #432, 433, 434, 435, 436, 437, 438, 439, 440]:
     #tt.Add("/data1/xpe/xpedata/002_%07d/002_%07d_data_TH5.root"%(runid, runid))
+    pass
 # Note:
 # 1 night gap between run 400 (timeout at 20:11 1/7) and 402 (start 9:37 2/7)
 # 402 ends with timeout, 403 started after ~1 hr -- 403 is very small
@@ -28,12 +28,13 @@ for runid in [393, 394, 395, 396, 397, 398, 399, 400,
 
 # SELECT RUNS to be analized
 # GPD19
-for runid in [2724]:
+for runid in [2724, 2725, 2726, 2727, 2728, 2729, 2730]:
     tt.Add("/data1/xpe/xpedata/002_%07d/002_%07d_data_TH5.root"%(runid, runid))
-
+    pass
 # SELECT OPTIONS
-Label      = 'GPD018_fill1'
-TimeBin    = 4. #hours
+#Label      = 'GPD018_fill1_reference'
+Label      = 'GPD019_fill0'
+TimeBin    = 1. #hours
 nsigfit    = 1.5
 #dh         = ROOT.TDatime(2016,6,30,10,56,21) # started on Jun 30 10:56:21 2016
 dh         = ROOT.TDatime(2016,9,26,10,59,0) # started on Mon Sep 26 10:59:13 2016
@@ -168,7 +169,8 @@ gGain.GetXaxis().SetTimeFormat("#splitline{%d/%m/%y}{%H:%M:%S}");
 gGain.GetXaxis().SetTimeOffset(TimeOffset)
 gGain.GetXaxis().SetLabelOffset(0.03)
 gGain.Draw("ap")
-fGain = ROOT.TF1('fGain', 'pol1', 0, (SpotCut_tthr-TimeOffset))
+#fGain = ROOT.TF1('fGain', 'pol1', 0, (SpotCut_tthr-TimeOffset))
+fGain = ROOT.TF1('fGain', 'pol1', 0, maxTime)
 fGain.SetParameters(10, 0.002)
 #gGain.Fit("fGain", "R")
 ROOT.gPad.Update()
