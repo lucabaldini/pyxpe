@@ -11,9 +11,9 @@ G2FWHM = 2.3548200450309493
 tt = ROOT.TChain("tree") 
 # SELECT RUNS to be analized
 # GPD18
-for runid in [393, 394, 395, 396, 397]:#, 398, 399, 400,
-              #401, 402, 403, 406, 407, 408, 409, 410, 
-              #411, 412, 413, 414, 415, 416,
+for runid in [393, 394, 395, 396, 397, 398, 399, 400,
+              401, 402, 403, 406, 407, 408, 409, 410, 
+              411, 412, 413]:#, 414, 415, 416,
               #417, 418, 420, 421, 422, 423, 424, 425, 426, 427, 428,
               #432, 433, 434, 435, 436, 437, 438, 439, 440]:
     #tt.Add("/data1/xpe/xpedata/002_%07d/002_%07d_data_TH5.root"%(runid, runid))
@@ -28,11 +28,12 @@ for runid in [393, 394, 395, 396, 397]:#, 398, 399, 400,
 
 # SELECT RUNS to be analized
 # GPD19
-for runid in [2724, 2725, 2726, 2727, 2728, 2729, 2730, 2731, 2732]:
+for runid in [2724, 2725, 2726, 2727, 2728, 2729, 2730, 2731, 2732, 2733]:
     tt.Add("/data1/xpe/xpedata/002_%07d/002_%07d_data_TH5.root"%(runid, runid))
     pass
 # Note
 # HV off after 2732 - 2 days off to check what happens to the gain
+# HV on again in run 2733 - on 30/09/2016 at 8:50
 
 # SELECT OPTIONS
 #Label      = 'GPD018_fill1_reference'
@@ -147,7 +148,8 @@ for i in xrange(Nbins):
             resErr[-1] = resErr[-1]*G2FWHM
 
     ROOT.gPad.Update()
-    ctmp.Print("tmpAllHisto.ps");
+    if htmp.GetEntries() >0:
+        ctmp.Print("tmpAllHisto.ps");
     #raw_input("inspect and pres enter")
 
 ctmp.Print("tmpAllHisto.ps]");
