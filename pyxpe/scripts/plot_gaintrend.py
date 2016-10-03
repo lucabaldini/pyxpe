@@ -13,8 +13,8 @@ tt = ROOT.TChain("tree")
 # GPD18
 for runid in [393, 394, 395, 396, 397, 398, 399, 400,
               401, 402, 403, 406, 407, 408, 409, 410, 
-              411, 412, 413]:#, 414, 415, 416,
-              #417, 418, 420, 421, 422, 423, 424, 425, 426, 427, 428,
+              411, 412, 413, 414, 415, 416,
+              417, 418, 420, 421, 422, 423, 424, 425, 426, 427, 428]:#,
               #432, 433, 434, 435, 436, 437, 438, 439, 440]:
     #tt.Add("/data1/xpe/xpedata/002_%07d/002_%07d_data_TH5.root"%(runid, runid))
     pass
@@ -28,12 +28,15 @@ for runid in [393, 394, 395, 396, 397, 398, 399, 400,
 
 # SELECT RUNS to be analized
 # GPD19
-for runid in [2724, 2725, 2726, 2727, 2728, 2729, 2730, 2731, 2732, 2733]:
+for runid in [2724, 2725, 2726, 2727, 2728, 2729, 2730, 2731, 2732, 
+              2733, 2734, 2735, 2736, 2737, 2738, 2739, 2740, 2741,
+              2747]:
     tt.Add("/data1/xpe/xpedata/002_%07d/002_%07d_data_TH5.root"%(runid, runid))
     pass
 # Note
 # HV off after 2732 - 2 days off to check what happens to the gain
 # HV on again in run 2733 - on 30/09/2016 at 8:50
+# change setting after 2741: reduce HVTop, thr and minWin. New run 2748 (@ 1475498515.6)
 
 # SELECT OPTIONS
 #Label      = 'GPD018_fill1_reference'
@@ -49,26 +52,29 @@ TimeHours  = "((fTimeStamp-%.1f)/3600.)" % TimeOffset
 minEvtInHist = 500
 useFWHM      = True
 useSmallSpot = False
-SpotCut_tthr = 1467898100
+TimeThr_19   = 1475498515
+#SpotCut_tthr = 1467898100
 SpotCut_0    = "((fImpactY[0]-0)**2 + (fImpactX[0]-0.5)**2)<(1.**2)" # max 2.5 to avoid bad chan area
 SpotCut_1    = "((fImpactY[0]+4.)**2 + (fImpactX[0]+4.)**2)<(1.**2)" #
-SmallSpotCut = "((fTimeStamp<=%d)*(%s) + (fTimeStamp>%d)*(%s))" %\
-               (SpotCut_tthr, SpotCut_0, SpotCut_tthr, SpotCut_1)
+#SmallSpotCut = "((fTimeStamp<=%d)*(%s) + (fTimeStamp>%d)*(%s))" %\
+#               (SpotCut_tthr, SpotCut_0, SpotCut_tthr, SpotCut_1)
 
-"""
+SmallSpotCut = "fTrigWindow>650"
+
+
 # time bins logic has to take into account time threshold
-if tt.GetMaximum("fTimeStamp")>=SpotCut_tthr:
+if tt.GetMaximum("fTimeStamp")>=TimeThr_19:
     split_time_flag = True
     minTime    = (tt.GetMinimum("fTimeStamp")-TimeOffset)/3600.
-    maxTime    = (SpotCut_tthr-TimeOffset)/3600.
+    maxTime    = (TimeThr_19-TimeOffset)/3600.
     Nbins      = int((maxTime-minTime)/TimeBin)
     timeBins_0 = np.linspace(0,maxTime, Nbins+1)
-    minTime    = (SpotCut_tthr-TimeOffset)/3600.
+    minTime    = (TimeThr_19-TimeOffset)/3600.
     maxTime    = (tt.GetMaximum("fTimeStamp")-TimeOffset)/3600.
     Nbins      = max(round((maxTime-minTime)/TimeBin),1)
     timeBins_1 = np.linspace(minTime, maxTime, Nbins+1)
     timeBins   = np.append(timeBins_0, timeBins_1[1:])
-    print (SpotCut_tthr-TimeOffset)/3600.
+    print (TimeThr_19-TimeOffset)/3600.
     print (tt.GetMaximum("fTimeStamp")-TimeOffset)/3600.
     print (maxTime-minTime)/TimeBin
     #raise
@@ -76,19 +82,22 @@ else:
     split_time_flag = False
     minTime    = (tt.GetMinimum("fTimeStamp")-TimeOffset)/3600.
     maxTime    = (tt.GetMaximum("fTimeStamp")-TimeOffset)/3600.
-    Nbins      = int((maxTime-minTime)/TimeBin)
+    Nbins      = max(int((maxTime-minTime)/TimeBin), 1)
     timeBins   = np.linspace(0,maxTime, Nbins+1)
 
-print SpotCut_tthr, (SpotCut_tthr-TimeOffset)/3600.
-print timeBins
+#print SpotCut_tthr, (SpotCut_tthr-TimeOffset)/3600.
+#print timeBins
+
 """
 split_time_flag = False
 minTime    = (tt.GetMinimum("fTimeStamp")-TimeOffset)/3600.
 maxTime    = (tt.GetMaximum("fTimeStamp")-TimeOffset)/3600.
 Nbins      = max(int((maxTime-minTime)/TimeBin), 1)
 timeBins   = np.linspace(0,maxTime, Nbins+1)
+"""
 print "Eval trend from %f hr to %f hr after start in %d bins" %\
     (min(timeBins), max(timeBins), len(timeBins))
+
 
 Nbins    = len(timeBins)-1
 timeVal  = 0.5*(timeBins[1:] +timeBins[:-1])
@@ -118,7 +127,7 @@ ctmp = ROOT.TCanvas()
 ctmp.Print("tmpAllHisto.ps[");
 hAll.Draw("colz")
 ctmp.Print("tmpAllHisto.ps");
-g0 = ROOT.TF1("g0", "gaus", 3000, 5500)
+g0 = ROOT.TF1("g0", "gaus", 2000, 5500)
 for i in xrange(Nbins):
     # get projection in time (y coord in hAll)
     htmp = hAll.ProjectionX("htmp", i+1,i+1)
@@ -189,9 +198,9 @@ if split_time_flag:
     time_bound_line = ROOT.TLine()
     time_bound_line.SetLineColor(ROOT.kBlue)
     time_bound_line.SetLineStyle(2)
-    time_bound_line.DrawLine((SpotCut_tthr-TimeOffset),
+    time_bound_line.DrawLine((TimeThr_19-TimeOffset),
                              gGain.GetYaxis().GetXmin(),
-                             (SpotCut_tthr-TimeOffset),
+                             (TimeThr_19-TimeOffset),
                              gGain.GetYaxis().GetXmax())
     ROOT.gPad.Update()
                              
@@ -205,7 +214,7 @@ if useFWHM:
 gRes.GetXaxis().SetTitle("Elapsed Time (hours)")
 gRes.GetYaxis().SetTitle("#Delta E/E (%)")
 gRes.Draw("ap")
-fRes = ROOT.TF1('fRes', 'pol1', 0, (SpotCut_tthr-TimeOffset)/3600.)
+fRes = ROOT.TF1('fRes', 'pol1', 0, (TimeThr_19-TimeOffset)/3600.)
 fRes.SetParameters(0.1, 0.001)
 #gRes.Fit("fRes", "R")
 ROOT.gPad.Update()
@@ -216,8 +225,8 @@ ROOT.gPad.Update()
 #psRes.SetY2NDC(0.80);
 cTrend.Update()
 if split_time_flag:
-    time_bound_line.DrawLine((SpotCut_tthr-TimeOffset)/3600.,
+    time_bound_line.DrawLine((TimeThr_19-TimeOffset)/3600.,
                              gRes.GetYaxis().GetXmin(),
-                             (SpotCut_tthr-TimeOffset)/3600.,
+                             (TimeThr_19-TimeOffset)/3600.,
                              gRes.GetYaxis().GetXmax())
     ROOT.gPad.Update()
