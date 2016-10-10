@@ -26,6 +26,7 @@ from matplotlib.patches import Ellipse, Circle, Wedge
 from pyxpe.recon.binio import xpeBinaryFileWindowed
 from pyxpe.recon.clustering import hierarchical_clustering
 from pyxpe.recon.geometry import xpeRay2d
+from pyxpe.recon.recon import xpePixyRecon
 from pyxpe.utils.logging_ import logger
 
 
@@ -42,7 +43,7 @@ def annotate(text, pos, text_pos, text_size=15, color='gray',
                 ha='center', color=color, bbox=_bbox,
                 arrowprops=_arrowprops)
 
-def display_recon(event, zero_suppression=9, coordinate_system='pixy'):
+def display_recon(event, zero_suppression=9, coordinate_system='xpe'):
     """
     """
     cluster = hierarchical_clustering(event, zero_suppression,
@@ -56,31 +57,28 @@ def display_recon(event, zero_suppression=9, coordinate_system='pixy'):
     cluster_fig = cluster.draw(coordinate_system, show=False)
     plt.savefig('sample_evt_cluster.pdf')
 
+    recon = xpePixyRecon(cluster)
     mom_fig = cluster.draw(coordinate_system, hexcol_padding=0.1, show=False)
     _color = 'blue'
     _lw = 1.5
-    cluster.baricenter.draw(color=_color)
-    annotate('Baricenter', cluster.baricenter, (0.8, 0.85))
-    cluster.axis0.draw(color=_color, lw=_lw, ls='dashed')
-    p = cluster.axis0.at(-0.4)
-    annotate('Principal axis', p, (0.15, 0.9))
-    major_axis = xpeRay2d(cluster.baricenter, cluster.phi0)
-    major_axis.draw(r=numpy.sqrt(cluster.mom2_long), color=_color, lw=_lw)
-    p = major_axis.at(-0.5*numpy.sqrt(cluster.mom2_long))
-    annotate('$\\sqrt{M_2^{\\rm long}}$', p, (0.3, 0.8))
-    minor_axis = xpeRay2d(cluster.baricenter, cluster.phi0 + 0.5*numpy.pi)
-    minor_axis.draw(r=numpy.sqrt(cluster.mom2_trans), color=_color, lw=_lw)
-    p = minor_axis.at(-0.5*numpy.sqrt(cluster.mom2_trans))
-    annotate('$\\sqrt{M_2^{\\rm trans}}$', p, (0.7, 0.2))
-    e = Ellipse(xy=cluster.baricenter, width=2*numpy.sqrt(cluster.mom2_long),
-                height=2*numpy.sqrt(cluster.mom2_trans),
-                angle=numpy.degrees(cluster.phi0), facecolor='none',
-                edgecolor=_color, lw=_lw)
-    plt.gca().add_artist(e)
-    p = minor_axis.at(-numpy.sqrt(cluster.mom2_trans))
-    annotate('Ellipsoid of inertia', p, (0.5, 0.1))
-    plt.savefig('sample_evt_mom_analysis.pdf')
+    recon.ma0.draw(color=_color)
+    annotate('Baricenter', cluster.baricenter, (0.15, 0.75))
+    p = recon.ma0.axis.at(0.4)
+    annotate('Principal axis', p, (0.45, 0.95))
     
+    #major_axis = xpeRay2d(cluster.baricenter, cluster.phi0)
+    #major_axis.draw(r=numpy.sqrt(cluster.mom2_long), color=_color, lw=_lw)
+    #p = major_axis.at(-0.5*numpy.sqrt(cluster.mom2_long))
+    #annotate('$\\sqrt{M_2^{\\rm long}}$', p, (0.3, 0.8))
+    #minor_axis = xpeRay2d(cluster.baricenter, cluster.phi0 + 0.5*numpy.pi)
+    #minor_axis.draw(r=numpy.sqrt(cluster.mom2_trans), color=_color, lw=_lw)
+    #p = minor_axis.at(-0.5*numpy.sqrt(cluster.mom2_trans))
+    #annotate('$\\sqrt{M_2^{\\rm trans}}$', p, (0.7, 0.2))
+    #p = minor_axis.at(-numpy.sqrt(cluster.mom2_trans))
+    #annotate('Ellipsoid of inertia', p, (0.5, 0.1))
+    plt.savefig('sample_evt_mom_analysis.pdf')
+
+    """
     mom3_fig = plt.figure(facecolor='w')
     ax = plt.subplot(111)
     x = cluster.projection1d(cluster.baricenter, cluster.phi0)
@@ -131,7 +129,7 @@ def display_recon(event, zero_suppression=9, coordinate_system='pixy'):
     p = cluster.axis1.at(0.5)
     annotate('Final direction', p, (0.8, 0.85))
     plt.savefig('sample_evt_phi2.pdf')
-
+    """
     plt.show()
     
 
