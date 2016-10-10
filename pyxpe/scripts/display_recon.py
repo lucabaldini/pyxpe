@@ -58,24 +58,25 @@ def display_recon(event, zero_suppression=9, coordinate_system='xpe'):
     plt.savefig('sample_evt_cluster.pdf')
 
     recon = xpePixyRecon(cluster)
-    ma = recon.ma0
+    ma0 = recon.ma0
+    ma1 = recon.ma1
 
     mom_fig = cluster.draw(coordinate_system, hexcol_padding=0.1, show=False)
-    ma.draw(color='blue', semiaxes=True)
+    ma0.draw(color='blue', semiaxes=True)
     annotate('Baricenter', cluster.baricenter, (0.15, 0.75))
-    p = ma.axis.at(0.4)
+    p = ma0.axis.at(0.4)
     annotate('Principal axis', p, (0.45, 0.95))
-    p = ma.major_semiaxis.at(-0.5*numpy.sqrt(ma.mom2_long))
+    p = ma0.major_semiaxis.at(-0.5*numpy.sqrt(ma0.mom2_long))
     annotate('$\\sqrt{M_2^{\\rm long}}$', p, (0.1, 0.5))
-    p = ma.minor_semiaxis.at(-0.5*numpy.sqrt(ma.mom2_trans))
+    p = ma0.minor_semiaxis.at(-0.5*numpy.sqrt(ma0.mom2_trans))
     annotate('$\\sqrt{M_2^{\\rm trans}}$', p, (0.8, 0.6))
-    p = ma.minor_semiaxis.at(-numpy.sqrt(ma.mom2_trans))
+    p = ma0.minor_semiaxis.at(-numpy.sqrt(ma0.mom2_trans))
     annotate('Ellipsoid of inertia', p, (0.8, 0.2))
     plt.savefig('sample_evt_mom_analysis.pdf')
 
     mom3_fig = plt.figure(facecolor='w')
     ax = plt.subplot(111)
-    x = cluster.projection1d(cluster.baricenter, ma.phi)
+    x = cluster.projection1d(cluster.baricenter, ma0.phi)
     ax.bar(x, cluster.adc_values, width=0.002, color='black')
     plt.xlabel('Projection along the principal axis [mm]')
     plt.ylabel('Pulse height [ADC counts]')
@@ -84,8 +85,10 @@ def display_recon(event, zero_suppression=9, coordinate_system='xpe'):
     annotate('$\sqrt[3]{M_3}$', (x3, 0.), (0.75, 0.5))
     plt.savefig('sample_evt_mom3.pdf')
 
-    """
     conv_fig = cluster.draw(coordinate_system, hexcol_padding=0.75, show=False)
+    _color = 'blue'
+    cluster.baricenter.draw(color=_color)
+    """
     _color = 'blue'
     _lw = 1.5
     cluster.baricenter.draw(color=_color)
@@ -113,6 +116,7 @@ def display_recon(event, zero_suppression=9, coordinate_system='xpe'):
     plt.savefig('sample_evt_conv_point.pdf')
 
     dir2_fig = cluster.draw(coordinate_system, hexcol_padding=0.1, show=False)
+    ma1.draw(color='green', semiaxes=True)
     cluster.baricenter.draw(color=_color)
     annotate('Baricenter', cluster.baricenter, (0.85, 0.2))
     cluster.axis0.draw(color=_color, lw=_lw, ls='dashed')
