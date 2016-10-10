@@ -113,12 +113,12 @@ class xpeMomentsAnalysis:
                     edgecolor=color, linewidth=linewidth)
         plt.gca().add_artist(e)
         if semiaxes:
-            major_semiaxis = xpeRay2d(self.pivot, self.phi)
-            major_semiaxis.draw(r=numpy.sqrt(self.mom2_long), color=color,
-                                linewidth=linewidth)
-            minor_semiaxis = xpeRay2d(self.pivot, self.phi + 0.5*numpy.pi)
-            minor_semiaxis.draw(r=numpy.sqrt(self.mom2_trans), color=color,
-                                linewidth=linewidth)
+            self.major_semiaxis = xpeRay2d(self.pivot, self.phi)
+            self.major_semiaxis.draw(r=numpy.sqrt(self.mom2_long), color=color,
+                                     linewidth=linewidth)
+            self.minor_semiaxis = xpeRay2d(self.pivot, self.phi + 0.5*numpy.pi)
+            self.minor_semiaxis.draw(r=numpy.sqrt(self.mom2_trans), color=color,
+                                     linewidth=linewidth)
 
     def __str__(self):
         """Terminal formatting.

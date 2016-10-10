@@ -58,36 +58,33 @@ def display_recon(event, zero_suppression=9, coordinate_system='xpe'):
     plt.savefig('sample_evt_cluster.pdf')
 
     recon = xpePixyRecon(cluster)
+    ma = recon.ma0
+
     mom_fig = cluster.draw(coordinate_system, hexcol_padding=0.1, show=False)
-    recon.ma0.draw(color='black', semiaxes=True)
+    ma.draw(color='blue', semiaxes=True)
     annotate('Baricenter', cluster.baricenter, (0.15, 0.75))
-    p = recon.ma0.axis.at(0.4)
+    p = ma.axis.at(0.4)
     annotate('Principal axis', p, (0.45, 0.95))
-    
-    #major_axis = xpeRay2d(cluster.baricenter, cluster.phi0)
-    #major_axis.draw(r=numpy.sqrt(cluster.mom2_long), color=_color, lw=_lw)
-    #p = major_axis.at(-0.5*numpy.sqrt(cluster.mom2_long))
-    #annotate('$\\sqrt{M_2^{\\rm long}}$', p, (0.3, 0.8))
-    #minor_axis = xpeRay2d(cluster.baricenter, cluster.phi0 + 0.5*numpy.pi)
-    #minor_axis.draw(r=numpy.sqrt(cluster.mom2_trans), color=_color, lw=_lw)
-    #p = minor_axis.at(-0.5*numpy.sqrt(cluster.mom2_trans))
-    #annotate('$\\sqrt{M_2^{\\rm trans}}$', p, (0.7, 0.2))
-    #p = minor_axis.at(-numpy.sqrt(cluster.mom2_trans))
-    #annotate('Ellipsoid of inertia', p, (0.5, 0.1))
+    p = ma.major_semiaxis.at(-0.5*numpy.sqrt(ma.mom2_long))
+    annotate('$\\sqrt{M_2^{\\rm long}}$', p, (0.1, 0.5))
+    p = ma.minor_semiaxis.at(-0.5*numpy.sqrt(ma.mom2_trans))
+    annotate('$\\sqrt{M_2^{\\rm trans}}$', p, (0.8, 0.6))
+    p = ma.minor_semiaxis.at(-numpy.sqrt(ma.mom2_trans))
+    annotate('Ellipsoid of inertia', p, (0.8, 0.2))
     plt.savefig('sample_evt_mom_analysis.pdf')
 
-    """
     mom3_fig = plt.figure(facecolor='w')
     ax = plt.subplot(111)
-    x = cluster.projection1d(cluster.baricenter, cluster.phi0)
+    x = cluster.projection1d(cluster.baricenter, ma.phi)
     ax.bar(x, cluster.adc_values, width=0.002, color='black')
     plt.xlabel('Projection along the principal axis [mm]')
     plt.ylabel('Pulse height [ADC counts]')
-    x3 = numpy.sign(cluster.mom3_long)*abs(cluster.mom3_long)**(1./3.)
-    annotate('Baricenter', (0., 0.), (0.65, 0.8))
-    annotate('$\sqrt[3]{M_3}$', (x3, 0.), (0.25, 0.5))
+    x3 = numpy.sign(recon.mom3_long)*abs(recon.mom3_long)**(1./3.)
+    annotate('Baricenter', (0., 0.), (0.35, 0.85))
+    annotate('$\sqrt[3]{M_3}$', (x3, 0.), (0.75, 0.5))
     plt.savefig('sample_evt_mom3.pdf')
-    
+
+    """
     conv_fig = cluster.draw(coordinate_system, hexcol_padding=0.75, show=False)
     _color = 'blue'
     _lw = 1.5
