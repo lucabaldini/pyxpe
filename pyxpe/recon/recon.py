@@ -305,3 +305,15 @@ def run_xpe_recon(file_path, num_events=1000000000, zero_suppression=9,
     logger.info('Done, %d event(s) written to the output file.' %\
                 num_proc_events)
     return output_path
+
+
+if __name__ == '__main__':
+    file_path = '/data/work/xpe/xpedaq/data/test_fe_500evts.mdat'
+    for event in xpeBinaryFileWindowed(file_path):
+        cluster_list = hierarchical_clustering(event, 9, 'xpe')
+        cluster = cluster_list[0]
+        recon = xpePixyRecon(cluster)
+        print cluster.pulse_height, cluster.num_pixels(),\
+            cluster.baricenter.x(), cluster.baricenter.y(), recon.phi0,\
+            recon.ma0.mom2_long, recon.ma0.mom2_trans
+        raw_input()
