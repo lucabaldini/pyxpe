@@ -59,9 +59,7 @@ def display_recon(event, zero_suppression=9, coordinate_system='xpe'):
 
     recon = xpePixyRecon(cluster)
     mom_fig = cluster.draw(coordinate_system, hexcol_padding=0.1, show=False)
-    _color = 'blue'
-    _lw = 1.5
-    recon.ma0.draw(color=_color)
+    recon.ma0.draw(color='black', semiaxes=True)
     annotate('Baricenter', cluster.baricenter, (0.15, 0.75))
     p = recon.ma0.axis.at(0.4)
     annotate('Principal axis', p, (0.45, 0.95))

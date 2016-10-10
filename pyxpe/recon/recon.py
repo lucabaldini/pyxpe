@@ -100,7 +100,7 @@ class xpeMomentsAnalysis:
         self.mom2_long = mom2_long
         self.mom2_trans = mom2_trans
 
-    def draw(self, color='black', linewidth=1.5):
+    def draw(self, semiaxes=False, color='black', linewidth=1.5):
         """Draw the output of the moments analysis.
         """
         import matplotlib.pyplot as plt
@@ -112,7 +112,13 @@ class xpeMomentsAnalysis:
                     angle=numpy.degrees(self.phi), facecolor='none',
                     edgecolor=color, linewidth=linewidth)
         plt.gca().add_artist(e)
-        
+        if semiaxes:
+            major_semiaxis = xpeRay2d(self.pivot, self.phi)
+            major_semiaxis.draw(r=numpy.sqrt(self.mom2_long), color=color,
+                                linewidth=linewidth)
+            minor_semiaxis = xpeRay2d(self.pivot, self.phi + 0.5*numpy.pi)
+            minor_semiaxis.draw(r=numpy.sqrt(self.mom2_trans), color=color,
+                                linewidth=linewidth)
 
     def __str__(self):
         """Terminal formatting.
