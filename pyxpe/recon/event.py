@@ -194,11 +194,11 @@ class xpeEventWindowed(xpeEventBase):
         return xpeHexagonalMatrix(self.num_columns(), self.num_rows(),
                                   self.xmin, self.ymin)
 
-    def draw(self, zero_suppression=9, show=True):
+    def draw(self, zero_suppression=9, grids=True, show=True):
         """
         """
         matrix = self.window_matrix()
-        matrix.draw(self.adc_values, zero_suppression, show=False)
+        matrix.draw(self.adc_values, zero_suppression, grids=grids, show=False)
         if show:
             plt.show()
 

@@ -22,6 +22,8 @@
 import ROOT
 import numpy
 
+from matplotlib.patches import Ellipse
+
 from pyxpe.recon.binio import xpeBinaryFileWindowed
 from pyxpe.recon.rootio import xpePixyTree, xpeReconTree
 from pyxpe.recon.clustering import hierarchical_clustering
@@ -98,10 +100,25 @@ class xpeMomentsAnalysis:
         self.mom2_long = mom2_long
         self.mom2_trans = mom2_trans
 
-    def draw(self, **kwargs):
+    def draw(self, semiaxes=False, color='black', linewidth=1.5):
         """Draw the output of the moments analysis.
         """
+        import matplotlib.pyplot as plt
+        self.pivot.draw(color=color)
         self.axis = xpeRay2d(self.pivot, self.phi)
+        self.axis.draw(color=color, linewidth=linewidth)
+        e = Ellipse(xy=self.pivot, width=2*numpy.sqrt(self.mom2_long),
+                    height=2*numpy.sqrt(self.mom2_trans),
+                    angle=numpy.degrees(self.phi), facecolor='none',
+                    edgecolor=color, linewidth=linewidth)
+        plt.gca().add_artist(e)
+        if semiaxes:
+            self.major_semiaxis = xpeRay2d(self.pivot, self.phi)
+            self.major_semiaxis.draw(r=numpy.sqrt(self.mom2_long), color=color,
+                                     linewidth=linewidth)
+            self.minor_semiaxis = xpeRay2d(self.pivot, self.phi + 0.5*numpy.pi)
+            self.minor_semiaxis.draw(r=numpy.sqrt(self.mom2_trans), color=color,
+                                     linewidth=linewidth)
 
     def __str__(self):
         """Terminal formatting.
@@ -305,3 +322,15 @@ def run_xpe_recon(file_path, num_events=1000000000, zero_suppression=9,
     logger.info('Done, %d event(s) written to the output file.' %\
                 num_proc_events)
     return output_path
+
+
+if __name__ == '__main__':
+    file_path = '/data/work/xpe/xpedaq/data/test_fe_500evts.mdat'
+    for event in xpeBinaryFileWindowed(file_path):
+        cluster_list = hierarchical_clustering(event, 9, 'xpe')
+        cluster = cluster_list[0]
+        recon = xpePixyRecon(cluster)
+        print cluster.pulse_height, cluster.num_pixels(),\
+            cluster.baricenter.x(), cluster.baricenter.y(), recon.phi0,\
+            recon.ma0.mom2_long, recon.ma0.mom2_trans
+        raw_input()

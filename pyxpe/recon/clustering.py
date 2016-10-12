@@ -150,7 +150,7 @@ class xpeCluster:
                          verticalalignment='center', size=8, color=col)
         plt.xlabel('x [mm]')
         plt.ylabel('y [mm]')
-        self.baricenter.draw()
+        #self.baricenter.draw()
         #self.axis0.draw()
         #self.conversion_point.draw()
         #self.conversion_baricenter.draw()

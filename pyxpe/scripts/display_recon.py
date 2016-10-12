@@ -25,7 +25,8 @@ from matplotlib.patches import Ellipse, Circle, Wedge
 
 from pyxpe.recon.binio import xpeBinaryFileWindowed
 from pyxpe.recon.clustering import hierarchical_clustering
-from pyxpe.recon.geometry import xpeRay2d
+from pyxpe.recon.geometry import xpeRay2d, xpePoint2d
+from pyxpe.recon.recon import xpePixyRecon
 from pyxpe.utils.logging_ import logger
 
 
@@ -42,7 +43,7 @@ def annotate(text, pos, text_pos, text_size=15, color='gray',
                 ha='center', color=color, bbox=_bbox,
                 arrowprops=_arrowprops)
 
-def display_recon(event, zero_suppression=9, coordinate_system='pixy'):
+def display_recon(event, zero_suppression=9, coordinate_system='xpe'):
     """
     """
     cluster = hierarchical_clustering(event, zero_suppression,
@@ -50,88 +51,84 @@ def display_recon(event, zero_suppression=9, coordinate_system='pixy'):
     logger.info(event)
     logger.info(cluster)
 
-    event_fig = event.draw(show=False)
+    event_fig = event.draw(show=False, grids=False)
     plt.savefig('sample_evt_raw.pdf')
 
     cluster_fig = cluster.draw(coordinate_system, show=False)
+    cluster.baricenter.draw(color='blue')
+    annotate('Baricenter', cluster.baricenter, (0.15, 0.75))
     plt.savefig('sample_evt_cluster.pdf')
 
+    recon = xpePixyRecon(cluster)
+    ma0 = recon.ma0
+    ma1 = recon.ma1
+
     mom_fig = cluster.draw(coordinate_system, hexcol_padding=0.1, show=False)
-    _color = 'blue'
-    _lw = 1.5
-    cluster.baricenter.draw(color=_color)
-    annotate('Baricenter', cluster.baricenter, (0.8, 0.85))
-    cluster.axis0.draw(color=_color, lw=_lw, ls='dashed')
-    p = cluster.axis0.at(-0.4)
-    annotate('Principal axis', p, (0.15, 0.9))
-    major_axis = xpeRay2d(cluster.baricenter, cluster.phi0)
-    major_axis.draw(r=numpy.sqrt(cluster.mom2_long), color=_color, lw=_lw)
-    p = major_axis.at(-0.5*numpy.sqrt(cluster.mom2_long))
-    annotate('$\\sqrt{M_2^{\\rm long}}$', p, (0.3, 0.8))
-    minor_axis = xpeRay2d(cluster.baricenter, cluster.phi0 + 0.5*numpy.pi)
-    minor_axis.draw(r=numpy.sqrt(cluster.mom2_trans), color=_color, lw=_lw)
-    p = minor_axis.at(-0.5*numpy.sqrt(cluster.mom2_trans))
-    annotate('$\\sqrt{M_2^{\\rm trans}}$', p, (0.7, 0.2))
-    e = Ellipse(xy=cluster.baricenter, width=2*numpy.sqrt(cluster.mom2_long),
-                height=2*numpy.sqrt(cluster.mom2_trans),
-                angle=numpy.degrees(cluster.phi0), facecolor='none',
-                edgecolor=_color, lw=_lw)
-    plt.gca().add_artist(e)
-    p = minor_axis.at(-numpy.sqrt(cluster.mom2_trans))
-    annotate('Ellipsoid of inertia', p, (0.5, 0.1))
+    ma0.draw(color='blue', semiaxes=True)
+    annotate('Baricenter', cluster.baricenter, (0.15, 0.75))
+    p = ma0.axis.at(0.4)
+    annotate('Principal axis', p, (0.45, 0.95))
+    p = ma0.major_semiaxis.at(-0.5*numpy.sqrt(ma0.mom2_long))
+    annotate('$\\sqrt{M_2^{\\rm long}}$', p, (0.05, 0.5))
+    p = ma0.minor_semiaxis.at(-0.5*numpy.sqrt(ma0.mom2_trans))
+    annotate('$\\sqrt{M_2^{\\rm trans}}$', p, (0.92, 0.6))
+    p = ma0.minor_semiaxis.at(-numpy.sqrt(ma0.mom2_trans))
+    annotate('Ellipsoid of inertia', p, (0.8, 0.2))
     plt.savefig('sample_evt_mom_analysis.pdf')
-    
+
     mom3_fig = plt.figure(facecolor='w')
     ax = plt.subplot(111)
-    x = cluster.projection1d(cluster.baricenter, cluster.phi0)
+    x = cluster.projection1d(cluster.baricenter, ma0.phi)
     ax.bar(x, cluster.adc_values, width=0.002, color='black')
     plt.xlabel('Projection along the principal axis [mm]')
     plt.ylabel('Pulse height [ADC counts]')
-    x3 = numpy.sign(cluster.mom3_long)*abs(cluster.mom3_long)**(1./3.)
-    annotate('Baricenter', (0., 0.), (0.65, 0.8))
-    annotate('$\sqrt[3]{M_3}$', (x3, 0.), (0.25, 0.5))
+    x3 = numpy.sign(recon.mom3_long)*abs(recon.mom3_long)**(1./3.)
+    annotate('Baricenter', (0., 0.), (0.35, 0.85))
+    annotate('$\sqrt[3]{M_3}$', (x3, 0.), (0.75, 0.5))
     plt.savefig('sample_evt_mom3.pdf')
-    
+
     conv_fig = cluster.draw(coordinate_system, hexcol_padding=0.75, show=False)
     _color = 'blue'
     _lw = 1.5
     cluster.baricenter.draw(color=_color)
-    annotate('Baricenter', cluster.baricenter, (0.8, 0.85))
-    cluster.axis0.draw(color=_color, lw=_lw, ls='dashed')
-    p = cluster.axis0.at(-0.8)
-    annotate('Principal axis', p, (0.2, 0.9))
-    minor_axis = xpeRay2d(cluster.baricenter, cluster.phi0 + 0.5*numpy.pi)
-    minor_axis.draw(color=_color, lw=_lw)
-    r1 = 1.5*numpy.sqrt(cluster.mom2_long)
+    annotate('Baricenter', cluster.baricenter, (0.1, 0.65))
+    ma0.axis.draw(color=_color, ls='dashed')
+    p = ma0.axis.at(0.7)
+    annotate('Principal axis', p, (0.45, 0.95))
+    ma0.minor_semiaxis.draw(color=_color, lw=_lw)
+    r1 = 1.5*numpy.sqrt(ma0.mom2_long)
     c1 = Circle(xy=cluster.baricenter, radius=r1, facecolor='none',
                 edgecolor=_color, lw=_lw, hatch='///')
     plt.gca().add_artist(c1)
-    r2 = 3.5*numpy.sqrt(cluster.mom2_long)
+    p = cluster.baricenter + xpePoint2d(r1, 0)
+    annotate('$r_1 = 1.5 \\times \\sqrt{M_2^{\\rm long}}$', p, (0.875, 0.55))
+    r2 = 3.5*numpy.sqrt(ma0.mom2_long)
     c2 = Circle(xy=cluster.baricenter, radius=r2, facecolor='none',
                 edgecolor=_color, lw=_lw)
     plt.gca().add_artist(c2)
-    _phi1 = numpy.degrees(cluster.phi0) - 90
-    _phi2 = _phi1 + 180.
+    p = cluster.baricenter + xpePoint2d(r2*numpy.sin(2.5), -r2*numpy.cos(2.5))
+    annotate('$r_2 = 3.5 \\times \\sqrt{M_2^{\\rm long}}$', p, (0.9, 0.9))
+    _phi1 = numpy.degrees(ma0.phi) + 90
+    _phi2 = _phi1 - 180.
     w2 = Wedge(cluster.baricenter, r2, _phi1, _phi2, facecolor='none',
                edgecolor=_color, lw=_lw, hatch='///')
     plt.gca().add_artist(w2)
-    cluster.conversion_point.draw(color='green')
-    annotate('Conversion point', cluster.conversion_point, (0.2, 0.1))
+    recon.conversion_point.draw(color='green')
+    annotate('Conversion point', recon.conversion_point, (0.15, 0.9))
     plt.savefig('sample_evt_conv_point.pdf')
 
-    dir2_fig = cluster.draw(coordinate_system, hexcol_padding=0.1, show=False)
-    cluster.baricenter.draw(color=_color)
-    annotate('Baricenter', cluster.baricenter, (0.85, 0.2))
-    cluster.axis0.draw(color=_color, lw=_lw, ls='dashed')
-    p = cluster.axis0.at(-0.4)
-    annotate('Principal axis', p, (0.2, 0.9))
-    cluster.conversion_point.draw(color='green')
-    annotate('Conversion point', cluster.conversion_point, (0.2, 0.1))
-    cluster.axis1.draw(color='green', lw=_lw, ls='solid')
-    p = cluster.axis1.at(0.5)
-    annotate('Final direction', p, (0.8, 0.85))
-    plt.savefig('sample_evt_phi2.pdf')
 
+    dir2_fig = cluster.draw(coordinate_system, hexcol_padding=0.1, show=False)
+    cluster.baricenter.draw(color='blue')
+    annotate('Baricenter', cluster.baricenter, (0.1, 0.65))
+    ma0.axis.draw(color='blue', lw=_lw, ls='dashed')
+    p = ma0.axis.at(0.4)
+    annotate('Principal axis', p, (0.45, 0.95))    
+    ma1.draw(color='green', semiaxes=True)
+    annotate('Conversion point', ma1.pivot, (0.15, 0.9))
+    p = ma1.axis.at(0.5)
+    annotate('Final direction', p, (0.9, 0.35))
+    plt.savefig('sample_evt_phi2.pdf')
     plt.show()
     
 
