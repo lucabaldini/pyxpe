@@ -30,13 +30,15 @@ for runid in [393, 394, 395, 396, 397, 398, 399, 400,
 # GPD19
 for runid in [2724, 2725, 2726, 2727, 2728, 2729, 2730, 2731, 2732, 
               2733, 2734, 2735, 2736, 2737, 2738, 2739, 2740, 2741,
-              2747]:
+              2747, 2748, 2754, 2756, 2757, 2758, 2759, 2760, 2761, 2762]:
     tt.Add("/data1/xpe/xpedata/002_%07d/002_%07d_data_TH5.root"%(runid, runid))
     pass
 # Note
 # HV off after 2732 - 2 days off to check what happens to the gain
 # HV on again in run 2733 - on 30/09/2016 at 8:50
 # change setting after 2741: reduce HVTop, thr and minWin. New run 2748 (@ 1475498515.6)
+# HV Off for some time...
+# HV TOP reduced to 805 (-5) starting from 2763 on 12/10/'16
 
 # SELECT OPTIONS
 #Label      = 'GPD018_fill1_reference'
@@ -52,7 +54,8 @@ TimeHours  = "((fTimeStamp-%.1f)/3600.)" % TimeOffset
 minEvtInHist = 500
 useFWHM      = True
 useSmallSpot = False
-TimeThr_19   = 1475498515
+#TimeThr_19   = 1475498515
+TimeThr_19   = 1476256609
 #SpotCut_tthr = 1467898100
 SpotCut_0    = "((fImpactY[0]-0)**2 + (fImpactX[0]-0.5)**2)<(1.**2)" # max 2.5 to avoid bad chan area
 SpotCut_1    = "((fImpactY[0]+4.)**2 + (fImpactX[0]+4.)**2)<(1.**2)" #
@@ -127,7 +130,7 @@ ctmp = ROOT.TCanvas()
 ctmp.Print("tmpAllHisto.ps[");
 hAll.Draw("colz")
 ctmp.Print("tmpAllHisto.ps");
-g0 = ROOT.TF1("g0", "gaus", 2000, 5500)
+g0 = ROOT.TF1("g0", "gaus", 2000, 6500)
 for i in xrange(Nbins):
     # get projection in time (y coord in hAll)
     htmp = hAll.ProjectionX("htmp", i+1,i+1)
