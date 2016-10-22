@@ -30,7 +30,7 @@ from pyxpe.recon.recon import xpePixyRecon
 from pyxpe.utils.logging_ import logger
 
 
-def annotate(text, pos, text_pos, text_size=15, color='gray',
+def annotate(text, pos, text_pos, text_size=15, color='black',
              bbstyle='roundtooth'):
     """Annotate the current figure.
     """
@@ -106,15 +106,15 @@ def display_recon(event, zero_suppression=9, coordinate_system='xpe'):
     c2 = Circle(xy=cluster.baricenter, radius=r2, facecolor='none',
                 edgecolor=_color, lw=_lw)
     plt.gca().add_artist(c2)
-    p = cluster.baricenter + xpePoint2d(r2*numpy.sin(2.5), -r2*numpy.cos(2.5))
-    annotate('$r_2 = 3.5 \\times \\sqrt{M_2^{\\rm long}}$', p, (0.9, 0.9))
+    p = cluster.baricenter + xpePoint2d(r2*numpy.sin(-3.4), -r2*numpy.cos(-3.4))
+    annotate('$r_2 = 3.5 \\times \\sqrt{M_2^{\\rm long}}$', p, (0.8, 0.9))
     _phi1 = numpy.degrees(ma0.phi) + 90
     _phi2 = _phi1 - 180.
     w2 = Wedge(cluster.baricenter, r2, _phi1, _phi2, facecolor='none',
                edgecolor=_color, lw=_lw, hatch='///')
     plt.gca().add_artist(w2)
     recon.conversion_point.draw(color='green')
-    annotate('Conversion point', recon.conversion_point, (0.15, 0.9))
+    annotate('Absorption point', recon.conversion_point, (0.15, 0.9))
     plt.savefig('sample_evt_conv_point.pdf')
 
 
@@ -124,8 +124,8 @@ def display_recon(event, zero_suppression=9, coordinate_system='xpe'):
     ma0.axis.draw(color='blue', lw=_lw, ls='dashed')
     p = ma0.axis.at(0.4)
     annotate('Principal axis', p, (0.45, 0.95))    
-    ma1.draw(color='green', semiaxes=True)
-    annotate('Conversion point', ma1.pivot, (0.15, 0.9))
+    ma1.draw(color='green', ellipse=False, semiaxes=False)
+    annotate('Absorption point', ma1.pivot, (0.15, 0.9))
     p = ma1.axis.at(0.5)
     annotate('Final direction', p, (0.9, 0.35))
     plt.savefig('sample_evt_phi2.pdf')
@@ -134,5 +134,7 @@ def display_recon(event, zero_suppression=9, coordinate_system='xpe'):
 
 if __name__ == '__main__':
     file_path = '/data/work/xpe/xpedaq/data/test_fe_500evts.mdat'
-    event = xpeBinaryFileWindowed(file_path).next()
+    input_file = xpeBinaryFileWindowed(file_path) 
+    for i in range(108):
+        event = input_file.next()
     display_recon(event)
