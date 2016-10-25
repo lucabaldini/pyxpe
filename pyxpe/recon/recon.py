@@ -100,18 +100,19 @@ class xpeMomentsAnalysis:
         self.mom2_long = mom2_long
         self.mom2_trans = mom2_trans
 
-    def draw(self, semiaxes=False, color='black', linewidth=1.5):
+    def draw(self, ellipse=True, semiaxes=False, color='black', linewidth=1.5):
         """Draw the output of the moments analysis.
         """
         import matplotlib.pyplot as plt
         self.pivot.draw(color=color)
         self.axis = xpeRay2d(self.pivot, self.phi)
         self.axis.draw(color=color, linewidth=linewidth)
-        e = Ellipse(xy=self.pivot, width=2*numpy.sqrt(self.mom2_long),
-                    height=2*numpy.sqrt(self.mom2_trans),
-                    angle=numpy.degrees(self.phi), facecolor='none',
-                    edgecolor=color, linewidth=linewidth)
-        plt.gca().add_artist(e)
+        if ellipse:
+            e = Ellipse(xy=self.pivot, width=2*numpy.sqrt(self.mom2_long),
+                        height=2*numpy.sqrt(self.mom2_trans),
+                        angle=numpy.degrees(self.phi), facecolor='none',
+                        edgecolor=color, linewidth=linewidth)
+            plt.gca().add_artist(e)
         if semiaxes:
             self.major_semiaxis = xpeRay2d(self.pivot, self.phi)
             self.major_semiaxis.draw(r=numpy.sqrt(self.mom2_long), color=color,
