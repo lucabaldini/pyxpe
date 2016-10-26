@@ -46,10 +46,11 @@ def get_ci_run_noise_stat(run_id, verbose = False):
     nMinWin    = 0
     nLargerWin = 0
     RoiDict = {}
+    PixelDict = {}
     file_path = run_info['data_file_path']
     if not os.path.isfile(file_path):
         # No event found, upper limits not implemented yet
-        return ( thr_dac, 0, 0, -1, {})
+        return ( thr_dac, 0, 0, -1, {}, [])
     for event in xpeBinaryFileWindowed(file_path):
         # check event has minimum window of 396
         if event.num_pixels() in SINGLE_PXL_WINDOW:
@@ -65,9 +66,23 @@ def get_ci_run_noise_stat(run_id, verbose = False):
             if verbose:
                 print "******************* ROI different than Minimum:"
                 print event.roi(),  event.num_pixels()
+        # get the highest pixel per event:
+        # I'm sure there is a better way to do it...
+        (highest_x, highest_y) = event.highest_pixel()
+        h_pxl = (highest_x+ event.xmin, highest_y+event.ymin)
+        if PixelDict.has_key(h_pxl):
+            PixelDict[h_pxl] +=1
+        else:
+            PixelDict[h_pxl] =1
+        
+    PixelList = []
+    for ((x, y), v) in PixelDict.items():
+        PixelList.append((v,x,y))
+    PixelList.sort()
+    PixelList.reverse()
     timeLastEvt = event.microseconds
     # dac, nGoodRoi, nBadRoi, timeLastEvt, RoiDict
-    return ( thr_dac, nMinWin, nLargerWin, timeLastEvt, RoiDict)
+    return ( thr_dac, nMinWin, nLargerWin, timeLastEvt, RoiDict, PixelList)
 
 
 def thr_dac2mV(dac):
@@ -90,7 +105,10 @@ rList = [570, 569, 568, 567, 571]
 label = "XPOL_PI_NR_4"
 
 # run list for XPOL_PI_NR_3
-rList = [597, 596, 595, 594, 593, 592, 591, 590] # 592, 591, 590 with 0 counts
+# 592, 591, 590 with 0 counts
+# 600, 601, 603 with no CI and 2 ped sub
+rList = [597, 596, 595, 594, 593, 592, 591, 590, 600, 601, 603] 
+
 label = "XPOL_PI_NR_3"
 
 
@@ -102,7 +120,7 @@ if runIn !=None:
    label = "%d" %runIn
 
 for run in rList:
-    (thr_dac, nRoi, nRoiBad, tLastEvt, RoiDict) = get_ci_run_noise_stat(run)
+    (thr_dac, nRoi, nRoiBad, tLastEvt, roiDict, pxlList) = get_ci_run_noise_stat(run)
 
     print "----------------------------------------------"
     print "Run summary for id %d" % run
@@ -111,26 +129,29 @@ for run in rList:
         (nRoi +nRoiBad, nRoiBad)
     ave_rate = (nRoi +nRoiBad)/(tLastEvt/1e6)
     print "Average Rate = %f Hz" % ave_rate
-    n_roi = len(RoiDict.keys())
+    n_roi = len(roiDict.keys())
     print "Number of different ROI = %d " %  n_roi
     print "-----------------------------"
     print "Time of last evt %f us" % tLastEvt
     print "ROI printout: "
     n = 0
-    for rr in RoiDict.keys():
-        n += RoiDict[rr]
-        print  rr, RoiDict[rr]
+    for rr in roiDict.keys():
+        n += roiDict[rr]
+        print  rr, roiDict[rr]
     print "Total event in Dict = %d"%n
     if nRoi>0: # upper limits not implemented yet
         th.append(thr_dac2mV(thr_dac))
         rate.append(ave_rate)
         nch.append(n_roi)
+
+    for pp in pxlList:
+        print "(%d, %d): %d --  %.3f Hz"% (pp[1], pp[2], pp[0], pp[0]/(tLastEvt/1e6))
     if False and runIn ==None:
         raw_input('...inspect...')
 
 
 # do some plot if it's the case
-if len(th)>0:
+if len(th)>1:
     th   = numpy.array(th)
     rate = numpy.array(rate)
     nch = numpy.array(nch)
@@ -145,3 +166,11 @@ if len(th)>0:
     plt.axis([160, 360, 0.1, 1000])
 
     plt.show()
+
+"""
+
+"""
+
+
+
+
