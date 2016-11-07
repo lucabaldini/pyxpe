@@ -28,15 +28,22 @@ for runid in [393, 394, 395, 396, 397, 398, 399, 400,
 
 # SELECT RUNS to be analized
 # GPD19
-for runid in [2724, 2725, 2726, 2727, 2728, 2729, 2730, 2731, 2732, 
-              2733, 2734, 2735, 2736, 2737, 2738, 2739, 2740, 2741,
-              2747]:
+for runid in [#2724, 2725, 2726, 2727, 2728, 2729, 2730, 2731, 2732, 
+              #2733, 2734, 2735, 2736, 2737, 2738, 2739, 2740, 2741,
+              #2747, 2748, 2754, 2756, 2757, 2758, 2759, 2760, 2761, 2762,
+              2763, 2764, 2765, 2766, 2767, 2769,
+              2772, 2776, 2777, 2778, 2779, 2780,
+              2782, 2783, 2784, 2785, 2786, 2787]:
     tt.Add("/data1/xpe/xpedata/002_%07d/002_%07d_data_TH5.root"%(runid, runid))
     pass
 # Note
 # HV off after 2732 - 2 days off to check what happens to the gain
 # HV on again in run 2733 - on 30/09/2016 at 8:50
 # change setting after 2741: reduce HVTop, thr and minWin. New run 2748 (@ 1475498515.6)
+# HV Off for some time...
+# HV TOP reduced to 805 (-5) starting from 2763 on 12/10/'16
+# HV TOP back to 810 and thr 220 since run 2776
+# HV & Power OFF after run 2780 (13:30 19/10/2016)
 
 # SELECT OPTIONS
 #Label      = 'GPD018_fill1_reference'
@@ -45,16 +52,17 @@ TimeBin    = 1. #hours
 nsigfit    = 1.5
 #dh         = ROOT.TDatime(2016,6,30,10,56,21) # started on Jun 30 10:56:21 2016
 dh         = ROOT.TDatime(2016,9,26,10,59,0) # started on Mon Sep 26 10:59:13 2016
-TimeOffset = dh.Convert()
+TimeOffset = 1476256609 #dh.Convert()
 #CUT        = '(fTrigWindow > 600*(1 + (fTimeStamp - %f)*0.5e-03/4000.))' % TimeOffset
 CUT = '(1)'
 TimeHours  = "((fTimeStamp-%.1f)/3600.)" % TimeOffset
 minEvtInHist = 500
 useFWHM      = True
 useSmallSpot = False
-TimeThr_19   = 1475498515
+#TimeThr_19   = 1475498515
+TimeThr_19   = 1476256609
 #SpotCut_tthr = 1467898100
-SpotCut_0    = "((fImpactY[0]-0)**2 + (fImpactX[0]-0.5)**2)<(1.**2)" # max 2.5 to avoid bad chan area
+SpotCut_0    = "((fImpactY[0]-0)**2 + (fImpactX[0]-0.2)**2)<(1.**2)" # max 2.5 to avoid bad chan area
 SpotCut_1    = "((fImpactY[0]+4.)**2 + (fImpactX[0]+4.)**2)<(1.**2)" #
 #SmallSpotCut = "((fTimeStamp<=%d)*(%s) + (fTimeStamp>%d)*(%s))" %\
 #               (SpotCut_tthr, SpotCut_0, SpotCut_tthr, SpotCut_1)
@@ -127,7 +135,7 @@ ctmp = ROOT.TCanvas()
 ctmp.Print("tmpAllHisto.ps[");
 hAll.Draw("colz")
 ctmp.Print("tmpAllHisto.ps");
-g0 = ROOT.TF1("g0", "gaus", 2000, 5500)
+g0 = ROOT.TF1("g0", "gaus", 2000, 6500)
 for i in xrange(Nbins):
     # get projection in time (y coord in hAll)
     htmp = hAll.ProjectionX("htmp", i+1,i+1)
