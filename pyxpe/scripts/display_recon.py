@@ -30,7 +30,7 @@ from pyxpe.recon.recon import xpePixyRecon
 from pyxpe.utils.logging_ import logger
 
 
-def annotate(text, pos, text_pos, text_size=15, color='black',
+def annotate(text, pos, text_pos, text_size=25, color='black',
              bbstyle='roundtooth'):
     """Annotate the current figure.
     """
@@ -69,7 +69,7 @@ def display_recon(event, zero_suppression=9, coordinate_system='xpe'):
     p = ma0.axis.at(0.4)
     annotate('Principal axis', p, (0.45, 0.95))
     p = ma0.major_semiaxis.at(-0.5*numpy.sqrt(ma0.mom2_long))
-    annotate('$\\sqrt{M_2^{\\rm long}}$', p, (0.05, 0.5))
+    annotate('$\\sqrt{M_2^{\\rm long}}$', p, (0.1, 0.5))
     p = ma0.minor_semiaxis.at(-0.5*numpy.sqrt(ma0.mom2_trans))
     annotate('$\\sqrt{M_2^{\\rm trans}}$', p, (0.92, 0.6))
     p = ma0.minor_semiaxis.at(-numpy.sqrt(ma0.mom2_trans))
@@ -91,7 +91,7 @@ def display_recon(event, zero_suppression=9, coordinate_system='xpe'):
     _color = 'blue'
     _lw = 1.5
     cluster.baricenter.draw(color=_color)
-    annotate('Baricenter', cluster.baricenter, (0.1, 0.65))
+    annotate('Baricenter', cluster.baricenter, (0.13, 0.65))
     ma0.axis.draw(color=_color, ls='dashed')
     p = ma0.axis.at(0.7)
     annotate('Principal axis', p, (0.45, 0.95))
@@ -101,33 +101,33 @@ def display_recon(event, zero_suppression=9, coordinate_system='xpe'):
                 edgecolor=_color, lw=_lw, hatch='///')
     plt.gca().add_artist(c1)
     p = cluster.baricenter + xpePoint2d(r1, 0)
-    annotate('$r_1 = 1.5 \\times \\sqrt{M_2^{\\rm long}}$', p, (0.875, 0.55))
+    annotate('$r_1 = 1.5 \\times \\sqrt{M_2^{\\rm long}}$', p, (0.8, 0.55))
     r2 = 3.5*numpy.sqrt(ma0.mom2_long)
     c2 = Circle(xy=cluster.baricenter, radius=r2, facecolor='none',
                 edgecolor=_color, lw=_lw)
     plt.gca().add_artist(c2)
     p = cluster.baricenter + xpePoint2d(r2*numpy.sin(-3.4), -r2*numpy.cos(-3.4))
-    annotate('$r_2 = 3.5 \\times \\sqrt{M_2^{\\rm long}}$', p, (0.8, 0.9))
+    annotate('$r_2 = 3.5 \\times \\sqrt{M_2^{\\rm long}}$', p, (0.78, 0.9))
     _phi1 = numpy.degrees(ma0.phi) + 90
     _phi2 = _phi1 - 180.
     w2 = Wedge(cluster.baricenter, r2, _phi1, _phi2, facecolor='none',
                edgecolor=_color, lw=_lw, hatch='///')
     plt.gca().add_artist(w2)
     recon.conversion_point.draw(color='green')
-    annotate('Absorption point', recon.conversion_point, (0.15, 0.9))
+    annotate('Absorption point', recon.conversion_point, (0.16, 0.9))
     plt.savefig('sample_evt_conv_point.pdf')
 
 
     dir2_fig = cluster.draw(coordinate_system, hexcol_padding=0.1, show=False)
     cluster.baricenter.draw(color='blue')
-    annotate('Baricenter', cluster.baricenter, (0.1, 0.65))
+    annotate('Baricenter', cluster.baricenter, (0.13, 0.65))
     ma0.axis.draw(color='blue', lw=_lw, ls='dashed')
     p = ma0.axis.at(0.4)
     annotate('Principal axis', p, (0.45, 0.95))    
     ma1.draw(color='green', ellipse=False, semiaxes=False)
-    annotate('Absorption point', ma1.pivot, (0.15, 0.9))
+    annotate('Absorption point', ma1.pivot, (0.16, 0.9))
     p = ma1.axis.at(0.5)
-    annotate('Final direction', p, (0.9, 0.35))
+    annotate('Final direction', p, (0.86, 0.35))
     plt.savefig('sample_evt_phi2.pdf')
     plt.show()
     
