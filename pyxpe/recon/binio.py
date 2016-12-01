@@ -94,8 +94,7 @@ class xpeBinaryFileFullFrame(xpeBinaryFileBase):
         adc_counts = adc_counts.transpose()
         adc_counts = adc_counts.flatten()
         adc_counts = adc_counts.reshape(XPOL_NUM_COLUMNS, XPOL_NUM_ROWS)
-        return adc_counts
-            
+        return xpeEventFullFrame(adc_counts)           
 
 
 class xpeBinaryFileWindowed(xpeBinaryFileBase):

@@ -55,13 +55,61 @@ class xpeEventBase:
 
 class xpeEventFullFrame(xpeEventBase):
 
+    """Basic class representing an event aquired in full-frame mode.
     """
-    """
 
-    pass
+    def __init__(self, adc_values):
+        """Constructor.
+        """
+        self.adc_values = adc_values
+        
+    def size(self):
+        """Return the total number of bytes in the event.
+        """
+        return 2*self.num_pixels()
+        
+    def num_columns(self):
+        """Return the number of columns.
+        """
+        return 300
+        
+    def num_rows(self):
+        """Return the number of rows.
+        """
+        return 352
 
+    def num_pixels(self):
+        """Return the total number of pixels in the window.
+        """
+        return self.num_rows()*self.num_columns() 
+        
+    def adc_value(self, col, row):
+        """Return the pulse height for a given pixel in the window.
+        """
+        return self.adc_values[col, row]
 
+    def highest_pixel(self):
+        """Return the coordinats of the pixel with the maximum value of
+        ADC counts.
+        """
+        return numpy.unravel_index(numpy.argmax(self.adc_values),
+                                   self.adc_values.shape)
+    
+    def highest_adc_value(self):
+        """Return the maximum value of ADC counts for the pixels in the event.
+        """
+        return self.adc_values.max()
 
+    def draw(self, show = True):
+        """
+        """
+        
+        im = plt.imshow(self.adc_values, cmap='hot')
+        plt.colorbar(im, orientation='horizontal')
+        if show:
+            plt.show()    
+    
+    
 class xpeEventWindowed(xpeEventBase):
     
     """Basic class representing an event aquired in windowed mode.

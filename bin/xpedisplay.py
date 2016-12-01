@@ -19,7 +19,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-from pyxpe.recon.binio import xpeBinaryFileWindowed
+from pyxpe.recon.binio import xpeBinaryFileWindowed, xpeBinaryFileFullFrame
 
 
 if __name__ == '__main__':
@@ -28,6 +28,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=formatter)
     parser.add_argument('binfile', type=str,
                         help='the input binary file')
+    parser.add_argument('-f', '--full-frame', action='store_true',
+                        dest = 'full_frame', default=False,
+                        help='read events in full frame mode')
     parser.add_argument('-o', '--offset', type=int, default=0,
                         help='offset (in bytes) of the desired event header')
     parser.add_argument('-n', '--num-events', type=int, default=10,
@@ -36,10 +39,15 @@ if __name__ == '__main__':
                         help='zero-suppression threshold')
     args = parser.parse_args()
 
-    input_file = xpeBinaryFileWindowed(args.binfile)
+    if args.full_frame:
+      input_file = xpeBinaryFileFullFrame(args.binfile)
+    else:
+      input_file = xpeBinaryFileWindowed(args.binfile)
     input_file.seek(args.offset)
     for i in xrange(args.num_events):
         event = input_file.next()
-        print(event)
-        event.draw_ascii(args.zero_suppression)
-        event.draw(args.zero_suppression)
+        if args.full_frame:
+            event.draw()
+        else:
+            event.draw_ascii(args.zero_suppression)
+            event.draw(args.zero_suppression)
