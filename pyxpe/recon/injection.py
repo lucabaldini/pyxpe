@@ -98,7 +98,7 @@ def analyze_run(folder_path):
     mean, rms = compute_mean_rms(run_info['data_file_path'])
     x_tot_charge = 0.
     x_barycenter = 0.
-    padding = 8
+    padding = 6
     for x in range(x0 - padding, x0 + padding + 1):
         line = '(%3d, %3d) -> %.2f +/- %.2f' % (x, y0, mean[x, y0], rms[x, y0])
         if x == x0:

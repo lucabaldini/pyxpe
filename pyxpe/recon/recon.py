@@ -331,7 +331,7 @@ if __name__ == '__main__':
         cluster_list = hierarchical_clustering(event, 9, 'xpe')
         cluster = cluster_list[0]
         recon = xpePixyRecon(cluster)
-        print cluster.pulse_height, cluster.num_pixels(),\
+        print(cluster.pulse_height, cluster.num_pixels(),\
             cluster.baricenter.x(), cluster.baricenter.y(), recon.phi0,\
-            recon.ma0.mom2_long, recon.ma0.mom2_trans
+            recon.ma0.mom2_long, recon.ma0.mom2_trans)
         raw_input()

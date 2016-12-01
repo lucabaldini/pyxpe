@@ -461,11 +461,11 @@ class compound:
 
 if __name__ == '__main__':
     
-    print "------------------------"
+    print( "------------------------")
     g0 = gasmix(26, 0.8)
-    print "------------------------"
+    print( "------------------------")
     g = gasmix(12, 1.0)
-    #print "------------------------"
+    #print( "------------------------")
     #g1 = gasmix(16, 1.0)
     
     
@@ -490,11 +490,11 @@ if __name__ == '__main__':
     for ename in ['He', 'C','O','H']:
         el.append(element(ename))
         for energy in [3.7, 5.9]:
-            print ename, energy, "-", \
+            print( ename, energy, "-", \
                 el[-1].GetPhotoelectricCrossSection(energy),\
                 el[-1].GetRutherfordTotalCrossSection(energy),\
                 el[-1].GetMottTotalCrossSection(energy),\
-                el[-1].GetElasticMeanFreePath(energy, 1, "mott")
+                el[-1].GetElasticMeanFreePath(energy, 1, "mott"))
         
         plt.plot(xnew, el[-1].GetPhotoelectricCrossSection(xnew), '.',\
                  label = "%s"%ename)
@@ -531,7 +531,7 @@ if __name__ == '__main__':
 
     """
     e = element('C')
-    print e
+    print( e
     # test interpolation method
     x = e.energies
     y = e.PhotoelectricCrossSection

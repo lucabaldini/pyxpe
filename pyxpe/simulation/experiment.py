@@ -188,7 +188,7 @@ if __name__ == '__main__':
     e.set_detector(10.0) # Thickness (cm): 1.0
     e.set_source(0,0,0,0) # pol_angle, pol_degree, cntr_x, cntr_y
     # run events
-    #print 10./(e.gas.GetPhotoelectricCrossSection(e.energy)*e.gas.Density)
+    #print( 10./(e.gas.GetPhotoelectricCrossSection(e.energy)*e.gas.Density))
     import time
     t0 = time.time()
     for i in xrange(1):
@@ -196,5 +196,5 @@ if __name__ == '__main__':
         e.process_event(i)
         e.plot_event()
     t0 = time.time()-t0
-    print i, t0, (i+1)/t0
+    print( i, t0, (i+1)/t0)
 

@@ -38,11 +38,11 @@ SINGLE_PXL_WINDOW = [396, 324]
 def get_ci_run_noise_stat(run_id, verbose = False):
     """ Noisy channel analysis of charge injection runs
     """
-    print "Processing run Id %d" % run_id
+    print("Processing run Id %d" % run_id)
     run_info = load_run_info('/data1/xpe/xpedata/033_%07d' % run_id)
     thr_dac = run_info['config']['threshold_dacs'][0]
     if verbose:
-        print run_info
+        print (run_info)
     nMinWin    = 0
     nLargerWin = 0
     RoiDict = {}
@@ -64,8 +64,8 @@ def get_ci_run_noise_stat(run_id, verbose = False):
         else:
             nLargerWin +=1
             if verbose:
-                print "******************* ROI different than Minimum:"
-                print event.roi(),  event.num_pixels()
+                print("******************* ROI different than Minimum:")
+                print(event.roi(),  event.num_pixels())
         # get the highest pixel per event:
         # I'm sure there is a better way to do it...
         (highest_x, highest_y) = event.highest_pixel()
@@ -122,30 +122,30 @@ if runIn !=None:
 for run in rList:
     (thr_dac, nRoi, nRoiBad, tLastEvt, roiDict, pxlList) = get_ci_run_noise_stat(run)
 
-    print "----------------------------------------------"
-    print "Run summary for id %d" % run
-    print "Threshold DAC = %d (%d mV)" % (thr_dac, thr_dac2mV(thr_dac))
-    print "Number of events %d (roi != than min = %d)" % \
-        (nRoi +nRoiBad, nRoiBad)
+    print("----------------------------------------------")
+    print("Run summary for id %d" % run)
+    print("Threshold DAC = %d (%d mV)" % (thr_dac, thr_dac2mV(thr_dac)))
+    print("Number of events %d (roi != than min = %d)" % \
+        (nRoi +nRoiBad, nRoiBad))
     ave_rate = (nRoi +nRoiBad)/(tLastEvt/1e6)
-    print "Average Rate = %f Hz" % ave_rate
+    print("Average Rate = %f Hz" % ave_rate)
     n_roi = len(roiDict.keys())
-    print "Number of different ROI = %d " %  n_roi
-    print "-----------------------------"
-    print "Time of last evt %f us" % tLastEvt
-    print "ROI printout: "
+    print("Number of different ROI = %d " %  n_roi)
+    print("-----------------------------")
+    print("Time of last evt %f us" % tLastEvt)
+    print("ROI printout: ")
     n = 0
     for rr in roiDict.keys():
         n += roiDict[rr]
-        print  rr, roiDict[rr]
-    print "Total event in Dict = %d"%n
+        print( rr, roiDict[rr])
+    print("Total event in Dict = %d"%n)
     if nRoi>0: # upper limits not implemented yet
         th.append(thr_dac2mV(thr_dac))
         rate.append(ave_rate)
         nch.append(n_roi)
 
     for pp in pxlList:
-        print "(%d, %d): %d --  %.3f Hz"% (pp[1], pp[2], pp[0], pp[0]/(tLastEvt/1e6))
+        print("(%d, %d): %d --  %.3f Hz"% (pp[1], pp[2], pp[0], pp[0]/(tLastEvt/1e6)))
     if False and runIn ==None:
         raw_input('...inspect...')
 
@@ -155,7 +155,7 @@ if len(th)>1:
     th   = numpy.array(th)
     rate = numpy.array(rate)
     nch = numpy.array(nch)
-    print th
+    print(th)
     plt.plot(th, rate, 'o', label='rate [Hz]')
     plt.plot(th, nch, 'o', label='# noisy ch')
     plt.grid()

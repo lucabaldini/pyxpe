@@ -192,26 +192,26 @@ def test_random():
     """
     r = xperandom()
 
-    print "Test direct vs wrapped call:"
-    r.get_engine().seed(2)
+    print("Test direct vs wrapped call:"
+    r.get_engine().seed(2))
     print("Direct engine call:", \
           r.get_engine().random(), \
           r.get_engine().random())
     r.set_seed(2)
     print("Wrapped call:", r.random(), r.random())
 
-    print "Test seeding:"
+    print ("Test seeding:")
     b = np.sqrt(1.0 - np.power(((5.9 - 0.5)/511. + 1),-2.))
     r.set_seed(666) # diabolic seed
-    print r.random()
-    print r.photoelectron_theta(b)
-    print r.photoelectron_theta(b)
+    print (r.random())
+    print (r.photoelectron_theta(b))
+    print (r.photoelectron_theta(b))
     r.set_seed(666) 
-    print r.random()
-    print r.photoelectron_theta(b)
-    print r.photoelectron_theta(b)
+    print (r.random())
+    print (r.photoelectron_theta(b))
+    print (r.photoelectron_theta(b))
 
-    print "Test state dump:"
+    print ("Test state dump:")
     currentstate = r.get_state()
     #print ("Get state", currentstate)
     print("NextRandom", r.random(), r.photoelectron_theta(b))
@@ -219,8 +219,8 @@ def test_random():
     print("PrevRandom", r.random(), r.photoelectron_theta(b))
 
         
-    print "Test exp:", r.exp(2, 10)
-    print "Test uniform", r.uniform(2,5.2, 10)
+    print ("Test exp:", r.exp(2, 10))
+    print ("Test uniform", r.uniform(2,5.2, 10))
     
 
 def test_univariate(num_events=100000, num_bins=100):
@@ -248,7 +248,7 @@ def compare_with_root(N = 1000, energy = 5.9):
     h1 = ROOT.TH1F("h1", "h ROOT", 100,0,ROOT.TMath.Pi())
     h2 = ROOT.TH1F("h2", "h np", 100,0,ROOT.TMath.Pi())
     h2.SetLineColor(2)
-    print "Extract %d evts" %N
+    print ("Extract %d evts" %N)
     from time import time
     
     # extract ROOT
@@ -257,14 +257,14 @@ def compare_with_root(N = 1000, energy = 5.9):
         ThetaDist.SetParameter(1, b);
         h1.Fill(ThetaDist.GetRandom())
     t0 = time()-t0
-    print "root time", t0
+    print ("root time", t0)
     
     # exctract np
     t0 = time()
     for i in range(N):
         h2.Fill(r.photoelectron_theta(b))
     t0 = time()-t0
-    print "numpy time", t0
+    print ("numpy time", t0)
     
     ccc = ROOT.TCanvas()
     h1.Draw()

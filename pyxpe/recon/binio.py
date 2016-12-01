@@ -148,7 +148,7 @@ def test_fullframe(filePath, num_events):
     input_file = xpeBinaryFileFullFrame(filePath)
     for i in xrange(args.num_events):
         event = input_file.next()
-        print event
+        print (event)
     return event
 
 
@@ -159,7 +159,7 @@ def test_windowed(filePath, num_events):
     input_file = xpeBinaryFileWindowed(filePath)
     for i in xrange(args.num_events):
         event = input_file.next()
-        print event
+        print (event)
         event.draw_ascii()
         event.draw()
 

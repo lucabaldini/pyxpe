@@ -387,10 +387,10 @@ if __name__ == '__main__':
     t.set_photon(0, 0, 0.7, 5.9) # x,y,z, E
 
     for j in xrange(1):
-        print ">>>>>>>>>>>>>>>>>", j
+        print( ">>>>>>>>>>>>>>>>>", j)
         t.extract_phelectron()
         t.propagate_track()
-        print 
+        print ()
         plot_track([t.phe_scattering_v, t.aug_scattering_v], t.get_ion_pairs())
 
     #test_theta_phi()
@@ -401,7 +401,7 @@ if __name__ == '__main__':
     #for i in xrange(1):
     #    ll.append(t.extract_phelectron())
     #    with return self.conv_element.AtomicNuber
-    #print len(ll), ll.count(8), ll.count(6), ll.count(2), ll.count(1)
+    #print (len(ll), ll.count(8), ll.count(6), ll.count(2), ll.count(1))
     #2.0 10000 6059 3927 10 4
     #3.0 10000 6174 3819 7 0
     #5.9 10000 6304 3689 5 2
