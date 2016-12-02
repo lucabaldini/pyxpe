@@ -102,9 +102,8 @@ class xpeEventFullFrame(xpeEventBase):
 
     def draw(self, show = True):
         """
-        """
-        
-        im = plt.imshow(self.adc_values, cmap='hot')
+        """        
+        im = plt.imshow(self.adc_values.T, cmap='hot', interpolation='none')
         plt.colorbar(im, orientation='horizontal')
         if show:
             plt.show()    

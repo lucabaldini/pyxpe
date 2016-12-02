@@ -91,9 +91,9 @@ class xpeBinaryFileFullFrame(xpeBinaryFileBase):
         adc_counts = numpy.array(data, numpy.uint16)
         adc_counts = adc_counts.reshape(XPOL_PIXELS_PER_BUFFER,
                                         XPOL_NUM_BUFFERS)
-        adc_counts = adc_counts.transpose()
+        adc_counts = adc_counts.transpose()     
         adc_counts = adc_counts.flatten()
-        adc_counts = adc_counts.reshape(XPOL_NUM_COLUMNS, XPOL_NUM_ROWS)
+        adc_counts = adc_counts.reshape(XPOL_NUM_ROWS, XPOL_NUM_COLUMNS).T
         return xpeEventFullFrame(adc_counts)           
 
 
