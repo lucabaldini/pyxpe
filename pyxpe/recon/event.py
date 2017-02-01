@@ -117,7 +117,8 @@ class xpeEventWindowed(xpeEventBase):
     HEADER_MARKER = 65535
     HEADER_LENGTH = 20
     
-    def __init__(self, xmin, xmax, ymin, ymax, buffer_id, t1, t2, adc_values):
+    def __init__(self, xmin, xmax, ymin, ymax, buffer_id, t1, t2, s1, s2,
+                 adc_values):
         """Constructor.
         """
         self.xmin = xmin

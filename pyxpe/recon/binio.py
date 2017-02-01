@@ -123,7 +123,8 @@ class xpeBinaryFileWindowed(xpeBinaryFileBase):
         num_rows = (ymax - ymin + 1)
         data = self.read_words(num_rows*num_columns)
         adc = numpy.array(data).reshape((num_rows, num_columns)).T
-        return xpeEventWindowed(xmin, xmax, ymin, ymax, buf_id, t1, t2, adc)
+        return xpeEventWindowed(xmin, xmax, ymin, ymax, buf_id, t1, t2, s1, s2,
+                                adc)
     
 
 def open_binary_file(filePath):
