@@ -30,7 +30,7 @@ from pyxpe.recon.xpol import XPOL_PIXELS_PER_BUFFER, XPOL_NUM_BUFFERS
 
 
 
-class xpeBinaryFileBase(file):
+class xpeBinaryFileBase:
 
     """ Base class for a xpedaq binary file.
     """
@@ -39,7 +39,22 @@ class xpeBinaryFileBase(file):
         """Constructor.
         """
         logger.info('Opening input binary file %s...' % filePath)
-        file.__init__(self, filePath, 'rb')
+        self.__file = open(filePath, 'rb')
+
+    def seek(self, offset):
+        """ redefine seek
+        """
+        self.__file.seek(offset)
+
+    def read(self, n):
+        """ redefine read
+        """
+        return self.__file.read(n)
+
+    def close(self):
+        """ redefine
+        """
+        self.__file.close()
 
     def read_word(self):
         """Read and byte-swap a single 2-bytes binary word from file.
@@ -63,7 +78,7 @@ class xpeBinaryFileBase(file):
     def __iter__(self):
         """Basic iterator implementation.
         """
-        return self
+        return self.__file
 
     def next(self):
         """Do-nothing next() method to be reimplemented in the derived classes.
