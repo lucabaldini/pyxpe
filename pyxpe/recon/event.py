@@ -29,6 +29,11 @@ import matplotlib.pyplot as plt
 
 from pyxpe.recon.xpol import xpeHexagonalMatrix, pixel2world
 
+# python2/3 compatibility fix
+try:
+    xrange
+except NameError:
+    xrange = range
 
 
 class xpeAnsiColors:

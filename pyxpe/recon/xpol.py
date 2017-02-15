@@ -38,6 +38,11 @@ XPOL_ROW_PITCH = 0.0433
 XPOL_COORDINATE_SYSTEMS = ['xpol', 'xpe', 'pixy']
 XPOL_DEFAULT_COORDINATE_SYSTEM = 'xpol'
 
+# python2/3 compatibility fix
+try:
+    xrange
+except NameError:
+    xrange = range
 
 def pixel2world_xpol(col, row):
     """Convert from pixel coordinates to world coordinates.

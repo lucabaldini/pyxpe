@@ -21,6 +21,12 @@
 
 from pyxpe.recon.binio import xpeBinaryFileWindowed, xpeBinaryFileFullFrame
 
+# python2/3 compatibility fix
+try:
+    xrange
+except NameError:
+    xrange = range
+	
 
 if __name__ == '__main__':
     import argparse
