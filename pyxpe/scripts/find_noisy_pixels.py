@@ -18,17 +18,25 @@ def pixels_overthr(event, thr=9):
 
 def guess_trg_pxl(event):
     """ Function to eval pixels that likely triggered the event.
-    TBD
+    Finding the triggering minicluster and 
+    selecting its pixel with highest pulse height 
     """
-    xtrg = -1
-    ytrg = -1
-    if event.ymax-event.ymin == 21 and event.xmax-event.xmin == 17:
-        # ~center of the asic
-        submatrix = event.adc_values[8:10, 10:12]
-        x, y = np.unravel_index(np.argmax(submatrix),(2,2))
-        return (x+8+event.xmin, y+10+event.ymin)
-
-    return (xtrg, ytrg)
+    if event.xmax-event.xmin > 17 or event.ymax-event.ymin > 21:
+        # window is too large and triggering pixels is too ambiguous
+        return (-1, -1)
+    # triggering minicluster ids
+    if event.xmin>0:
+        x0 = 8
+    else:
+        x0 = event.xmax-9
+    if event.ymin>0:
+        y0 = 10
+    else:
+        y0 = event.ymax-11
+    submatrix = event.adc_values[x0:x0+2, y0:y0+2]
+    x, y = np.unravel_index(np.argmax(submatrix),(2,2))
+    return (x+x0+event.xmin, y+y0+event.ymin)
+    
 
 def highest_occupancy_pxl(pxl_matrix, npxl=10):
     """ Get the list (col, row, occupancy) of the
@@ -47,12 +55,19 @@ def highest_occupancy_pxl(pxl_matrix, npxl=10):
 
 file_path = '/data/xpedata/001/001_0000669/001_0000669_data.mdat'
 
-#file_path = '/data/xpedata/001/001_0000670/001_0000670_data.mdat' # ci(100,100)
-#file_path = '/data/xpedata/001/001_0000671/001_0000671_data.mdat' # ci(9,100)
-#file_path = '/data/xpedata/001/001_0000672/001_0000672_data.mdat' # ci(10,100)
-#file_path = '/data/xpedata/001/001_0000676/001_0000676_data.mdat' # ci(11,100)
-#file_path = '/data/xpedata/001/001_0000677/001_0000677_data.mdat' # ci(101,100)
-#file_path = '/data/xpedata/001/001_0000678/001_0000678_data.mdat' # ci(101,101)
+
+#runId = 670 # ci(100,100)
+#runId = 679 # ci(9,101)
+#runId = 680 # ci(8,101)
+#runId = 681 # ci(7,101)
+#runId = 682 # ci(2,101)
+#runId = 683 # ci(3,101)
+#runId = 684 # ci(0,101)
+#runId = 685 # ci(298,10)
+#runId = 686 # ci(298,3)
+#runId = 687 # ci(298,350)
+#runId = 688 # ci(0,0)
+#file_path = '/data/xpedata/001/001_%07d/001_%07d_data.mdat'% (runId,runId)
 input_file = xpeBinaryFileWindowed(file_path)
 
 # matrix for pixel occupancy
@@ -63,9 +78,8 @@ for i in range(N_MAX):
     event = input_file.next()
     #event.draw_ascii(ZERO_SUPP)
     #print (event)
-    #print event.xmin+8, event.xmax-9,"-",event.ymin+10, event.ymax-11,\
-    #    "---", guess_trg_pxl(event)
-    col, row = pixels_overthr(event, ZERO_SUPP)
+    #print  guess_trg_pxl(event)
+    #col, row = pixels_overthr(event, ZERO_SUPP)
     #for (c,r) in zip(col, row):
     #    pxl_occupancy[r][c] +=event.adc_value(c-event.xmin, r-event.ymin)
     #    pxl_occupancy[r][c] += 1
