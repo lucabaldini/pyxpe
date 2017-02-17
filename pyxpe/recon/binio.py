@@ -78,7 +78,7 @@ class xpeBinaryFileBase:
     def __iter__(self):
         """Basic iterator implementation.
         """
-        return self.__file
+        return self
 
     def next(self):
         """Do-nothing next() method to be reimplemented in the derived classes.
