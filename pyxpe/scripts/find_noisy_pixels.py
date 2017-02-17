@@ -6,7 +6,7 @@ from pyxpe.recon.binio import xpeBinaryFileWindowed
 #from pyxpe.recon.xpol import XPOL_PIXELS_PER_BUFFER, XPOL_NUM_BUFFERS
 
 N_MAX     = 1000
-ZERO_SUPP = 9
+ZERO_SUPP = 5
 
 def pixels_overthr(event, thr=9):
     """ Get all pixels above threshold
@@ -16,11 +16,19 @@ def pixels_overthr(event, thr=9):
     col, row = np.where(_mask)
     return (event.xmin + col, event.ymin + row)
 
-def eval_trg_pxl():
+def guess_trg_pxl(event):
     """ Function to eval pixels that likely triggered the event.
     TBD
     """
-    pass
+    xtrg = -1
+    ytrg = -1
+    if event.ymax-event.ymin == 21 and event.xmax-event.xmin == 17:
+        # ~center of the asic
+        submatrix = event.adc_values[8:10, 10:12]
+        x, y = np.unravel_index(np.argmax(submatrix),(2,2))
+        return (x+8+event.xmin, y+10+event.ymin)
+
+    return (xtrg, ytrg)
 
 def highest_occupancy_pxl(pxl_matrix, npxl=10):
     """ Get the list (col, row, occupancy) of the
@@ -38,6 +46,13 @@ def highest_occupancy_pxl(pxl_matrix, npxl=10):
 
 
 file_path = '/data/xpedata/001/001_0000669/001_0000669_data.mdat'
+
+#file_path = '/data/xpedata/001/001_0000670/001_0000670_data.mdat' # ci(100,100)
+#file_path = '/data/xpedata/001/001_0000671/001_0000671_data.mdat' # ci(9,100)
+#file_path = '/data/xpedata/001/001_0000672/001_0000672_data.mdat' # ci(10,100)
+#file_path = '/data/xpedata/001/001_0000676/001_0000676_data.mdat' # ci(11,100)
+#file_path = '/data/xpedata/001/001_0000677/001_0000677_data.mdat' # ci(101,100)
+#file_path = '/data/xpedata/001/001_0000678/001_0000678_data.mdat' # ci(101,101)
 input_file = xpeBinaryFileWindowed(file_path)
 
 # matrix for pixel occupancy
@@ -47,10 +62,15 @@ pxl_occupancy = np.zeros([XPOL_NUM_ROWS,XPOL_NUM_COLUMNS])
 for i in range(N_MAX):
     event = input_file.next()
     #event.draw_ascii(ZERO_SUPP)
+    #print (event)
+    #print event.xmin+8, event.xmax-9,"-",event.ymin+10, event.ymax-11,\
+    #    "---", guess_trg_pxl(event)
     col, row = pixels_overthr(event, ZERO_SUPP)
-    for (c,r) in zip(col, row):
-        pxl_occupancy[r][c] +=event.adc_value(c-event.xmin, r-event.ymin)
-        pxl_occupancy[r][c] += 1
+    #for (c,r) in zip(col, row):
+    #    pxl_occupancy[r][c] +=event.adc_value(c-event.xmin, r-event.ymin)
+    #    pxl_occupancy[r][c] += 1
+    col, row = guess_trg_pxl(event)
+    pxl_occupancy[row][col] += 1
     #event.draw(ZERO_SUPP)
 
 from copy import copy
